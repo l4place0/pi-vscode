@@ -1,8 +1,7 @@
-# pi-vscode
+# Pi VSCode Fork
 
-[![VS Code Marketplace](https://img.shields.io/visual-studio-marketplace/v/pi0.pi-vscode?label=VS%20Code%20Marketplace&color=blue)](https://marketplace.visualstudio.com/items?itemName=pi0.pi-vscode) [![Open VSX](https://img.shields.io/open-vsx/v/pi0/pi-vscode?label=Open%20VSX&color=purple)](https://open-vsx.org/extension/pi0/pi-vscode)
-
-Minimal VS Code extension for [pi coding agent](https://pi.dev/).
+Minimal local-first VS Code extension for [pi coding agent](https://pi.dev/). This fork uses
+isolated contribution IDs so it can be installed alongside the official extension for A/B testing.
 
 ## Features
 
@@ -13,7 +12,7 @@ Minimal VS Code extension for [pi coding agent](https://pi.dev/).
 - **Status bar button** — PI button in the status bar for quick access
 - **Open with file context** — Send current file path and line range (or cursor position) to pi, available from the editor title bar
 - **Send selection** — Send selected text directly to the pi terminal
-- **`@pi` chat participant** — Use `@pi` in VS Code Chat for streamed RPC-backed replies while keeping the terminal workflow for normal Pi sessions
+- **`@pi-fork` chat participant** — Use `@pi-fork` in VS Code Chat for streamed RPC-backed replies while keeping the terminal workflow for normal Pi sessions
 - **Package manager** — Browse, search, install, and uninstall pi packages from the sidebar with live output streaming and cancel support; automatically detects package capabilities (extensions, skills, prompts, themes)
 - **Auto-detection** — Finds the pi binary automatically from common paths (`~/.bun/bin`, `~/.local/bin`, `~/.npm-global/bin`)
 
@@ -26,24 +25,23 @@ Minimal VS Code extension for [pi coding agent](https://pi.dev/).
 
 ## Install
 
-Available on the [VS Code Marketplace](https://marketplace.visualstudio.com/items?itemName=pi0.pi-vscode) and [Open VSX](https://open-vsx.org/extension/pi0/pi-vscode):
+This version is distributed as a local VSIX or CI artifact; Marketplace and Open VSX publishing are
+out of scope. Build and install it locally with:
 
 ```bash
-# VS Code / Cursor
-ext install pi0.pi-vscode
-
-# Open VSX (VSCodium, etc.)
-ovsx get pi0.pi-vscode
+pnpm install --frozen-lockfile
+pnpm package
+code --install-extension pi-vscode-fork-0.1.0.vsix --force
 ```
 
 ## Commands
 
-| Command                       | Keybinding       | Description                                                                              |
-| ----------------------------- | ---------------- | ---------------------------------------------------------------------------------------- |
-| `Pi: Open`                    | `Ctrl+Alt+3`     | Open or focus the pi terminal                                                            |
-| `Pi: Open with File`          | Editor title bar | Open pi with current file context                                                        |
-| `Pi: Send Selection`          | —                | Send selected text to pi terminal                                                        |
-| `Pi: Upgrade Pi and Packages` | —                | Find the pi binary, infer its package manager, upgrade pi globally, then run `pi update` |
+| Command                            | Keybinding       | Description                                                                              |
+| ---------------------------------- | ---------------- | ---------------------------------------------------------------------------------------- |
+| `Pi Fork: Open`                    | `Ctrl+Alt+3`     | Open or focus the pi terminal                                                            |
+| `Pi Fork: Open with File`          | Editor title bar | Open pi with current file context                                                        |
+| `Pi Fork: Send Selection`          | —                | Send selected text to pi terminal                                                        |
+| `Pi Fork: Upgrade Pi and Packages` | —                | Find the pi binary, infer its package manager, upgrade pi globally, then run `pi update` |
 
 ## Sidebar
 
@@ -106,8 +104,45 @@ These bridge tools let pi inspect selections, diagnostics, symbols, definitions,
 
 ## Configuration
 
-| Setting          | Default | Description                                             |
-| ---------------- | ------- | ------------------------------------------------------- |
-| `pi-vscode.path` | `""`    | Absolute path to the pi binary (auto-detected if empty) |
+| Setting               | Default | Description                                             |
+| --------------------- | ------- | ------------------------------------------------------- |
+| `pi-vscode-fork.path` | `""`    | Absolute path to the pi binary (auto-detected if empty) |
 
-On Windows, an extensionless `pi-vscode.path` is auto-probed for `.cmd`/`.exe`/`.ps1` variants so extensionless npm shims work out of the box.
+On Windows, an extensionless `pi-vscode-fork.path` is auto-probed for `.cmd`/`.exe`/`.ps1` variants so extensionless npm shims work out of the box.
+
+## Development
+
+The supported baseline is Node.js 22, pnpm 10.32.1, VS Code 1.110 or newer, and Pi 0.84.4 or
+newer.
+
+```bash
+corepack enable
+pnpm install --frozen-lockfile
+pnpm test
+pnpm build
+```
+
+Press F5 in VS Code to run the cross-platform `build` task and open an Extension Development Host.
+Run `pnpm dev` in a separate terminal when continuous rebuilding is useful.
+
+Additional acceptance commands:
+
+```bash
+pnpm test:pi -- 0.84.4
+pnpm test:integration
+pnpm package
+node scripts/verify-vsix.mjs pi-vscode-fork-0.1.0.vsix
+```
+
+`test:pi` installs Pi into a disposable temporary directory with an isolated npm cache, verifies the
+CLI flags, starts offline RPC, loads the bundled bridge, and checks a loopback bridge call. The
+Extension Host test downloads VS Code 1.110 on first use.
+
+For clean-profile VSIX validation, use dedicated directories rather than the daily VS Code profile:
+
+```powershell
+$profileRoot = Join-Path $PWD ".tmp/vsix-acceptance"
+code --user-data-dir "$profileRoot/user-data" --extensions-dir "$profileRoot/extensions" --install-extension ./pi-vscode-fork-0.1.0.vsix --force
+code --user-data-dir "$profileRoot/user-data" --extensions-dir "$profileRoot/extensions" --list-extensions --show-versions
+code --user-data-dir "$profileRoot/user-data" --extensions-dir "$profileRoot/extensions" --uninstall-extension pi0.pi-vscode-fork
+```

@@ -58,7 +58,9 @@
 - [x] 完成初始代码审计。
 - [x] 建立变更档案与实施方案。
 - [x] 开始代码修改。
-- [ ] 完成 P0 namespace/cwd/process 修复。
-- [ ] 完成 RPC 与 Explorer 修复。
-- [ ] 完成开发工作流和 CI。
-- [ ] 完成本地 VSIX 验收。
+- [x] 完成 P0 namespace/cwd/process 修复。
+- [x] 完成 RPC 与 Explorer 修复。
+- [x] 完成开发工作流和 CI 配置。
+- [x] 完成本地 VSIX 验收。
+
+远端三平台 CI 和 macOS/Linux 手工验收尚未实际执行，因此档案继续保持 `in-progress`。
