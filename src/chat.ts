@@ -43,6 +43,7 @@ export function createChatHandler(options: {
       });
       if (!result.hadOutput) stream.markdown("Pi did not return any text.");
     } catch (error) {
+      if (token.isCancellationRequested) return;
       const terminal = await createNewTerminal({
         extensionUri: options.extensionUri,
         bridgeConfig: options.getBridgeConfig(),
@@ -185,8 +186,8 @@ function createRpcUiAdapter() {
       vscode.window.showQuickPick(items, { title, placeHolder: title }),
     async confirm(title: string, message: string): Promise<boolean | undefined> {
       const result = await vscode.window.showWarningMessage(
-        message || title,
-        { modal: true, detail: message ? title : undefined },
+        title,
+        { modal: true, detail: message || undefined },
         "Confirm",
         "Cancel",
       );
