@@ -7,11 +7,12 @@
 
 ## 实际修改
 
-- 标准 `pnpm test` 已包含 lint、typecheck 和 Vitest；当前共有 6 个测试文件、53 个单元/Windows integration 用例。
+- 标准 `pnpm test` 已包含 lint、typecheck 和 Vitest；当前共有 6 个测试文件、54 个单元/Windows integration 用例。
 - Pi 安装 namespace 已迁移到 `@earendil-works/pi-coding-agent`；npm 安装使用 `--ignore-scripts`。
 - 新增统一 workspace/cwd resolution，按 Explorer resource、active editor、首个 workspace 的顺序解析；session state 升级为保存 cwd 的 v1 结构并兼容旧 map。
 - Explorer 文件和目录上下文已使用传入的 `resourceUri`；未打开文件不再伪造 selection。
 - 新增跨平台 Pi process abstraction：Unix 与 `.exe` 直接执行，`.cmd/.bat` 显式使用 ComSpec 和转义，`.ps1` 显式使用 PowerShell；Terminal、RPC 和 Packages 共用该策略。
+- Pi upgrade 已改为结构化参数并顺序执行 package manager 与 `pi update`，不再依赖默认终端的 `&&` 或 shell path quoting。
 - RPC JSONL parser 兼容 UTF-8 跨 chunk、LF/CRLF 和 malformed line；select/confirm/input 使用 VS Code 原生 UI，editor 明确取消，extension error 可诊断。
 - RPC 在 `agent_settled` 后结束，并通过 1 秒 grace 兼容旧 Pi 的 `agent_end`；`willRetry: true` 不提前关闭，Chat cancellation 不再打开 fallback terminal。
 - Packages sidebar 保留，但增加 package source/message 校验、单 active process、nonce CSP、安全 URL 过滤和无 inline handler 的事件委托。
@@ -39,18 +40,20 @@
 - `42eb357` `chore: prepare v0.1.0 local package`：将本地 artifact 版本更新为 0.1.0。
 - `044b3ff` `test: allow local Extension Host reuse`：允许本地复用已安装 VS Code，CI 仍固定 1.110。
 - `8e9ef97` `fix: keep generated test profiles out of checks`：隔离本地 Extension Host/VSIX 临时目录。
-- `docs: document fork development and local release workflow`：本结果档案与最终使用说明所在提交。
+- `2257ed0` `docs: document fork development and local release workflow`：本结果档案与最终使用说明。
+- `ba16b92` `fix: run Pi upgrades without shell pipelines`：让跨平台升级也使用结构化 process abstraction。
+- `docs: record final upgrade verification`：记录最终升级执行与验收事实。
 
 ## 验证结果
 
 - `pnpm fmt`：通过，0 warnings / 0 errors。
 - `pnpm typecheck`：通过。
-- `pnpm test:unit`：通过，6 files / 53 tests；Windows 真实 `.cmd` fixture 覆盖 cwd/env、空格、引号及 `& | < > ^ % !`。
+- `pnpm test:unit`：通过，6 files / 54 tests；Windows 真实 `.cmd` fixture 覆盖 cwd/env、空格、引号及 `& | < > ^ % !`。
 - `pnpm build`：通过，生成 `dist/extension.cjs`。
 - `pnpm test:pi -- 0.84.4`：通过；版本、关键 flags、offline RPC `get_state`、bundled bridge `getStatus` 和无 `extension_error` 均通过。
 - `pnpm test:pi -- latest`：通过；2026-09-02 registry latest 仍解析为 0.84.4。
 - Extension Host：本机 VS Code 1.135.0 通过，扩展激活以及 fork commands/profile/view 注册成功，退出码 0。固定 VS Code 1.110 下载两次被远端中止；Ubuntu CI 仍固定该版本。
-- `pnpm package`：通过，生成 `pi-vscode-fork-0.1.0.vsix`，12 files，约 33.64 KB。
+- `pnpm package`：通过，生成 `pi-vscode-fork-0.1.0.vsix`，12 files，约 34.31 KB。
 - `node scripts/verify-vsix.mjs pi-vscode-fork-0.1.0.vsix`：通过，7 类必需 artifact 齐全。
 - 干净 profile：0.1.0 VSIX 安装、`pi0.pi-vscode-fork@0.1.0` 列出和卸载均成功；临时 profile 已移入 Windows 回收站。
 - 本机工具事实：Node 24.20.0、pnpm 10.32.1、VS Code 1.135.0；CI 固定 Node 22、pnpm 10.32.1、VS Code 1.110。
