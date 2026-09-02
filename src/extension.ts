@@ -76,8 +76,9 @@ export async function activate(context: vscode.ExtensionContext) {
       const terminal = await openTerminal();
       terminal?.show();
     }),
-    vscode.commands.registerCommand("pi-vscode.openWithFile", async () => {
-      const terminal = await openTerminal(undefined, buildOpenWithFileContext());
+    vscode.commands.registerCommand("pi-vscode.openWithFile", async (resourceUri?: vscode.Uri) => {
+      const { cwd, contextLines } = await buildOpenWithFileContext(resourceUri);
+      const terminal = await openTerminal(undefined, contextLines, cwd);
       terminal?.show();
     }),
     vscode.commands.registerCommand("pi-vscode.sendSelection", async () => {
