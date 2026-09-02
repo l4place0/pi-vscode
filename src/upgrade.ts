@@ -2,6 +2,11 @@ export const PI_PACKAGE_NAME = "@earendil-works/pi-coding-agent";
 
 export type PiPackageManager = "bun" | "npm" | "pnpm" | "yarn";
 
+export interface PackageManagerInvocation {
+  command: PiPackageManager;
+  args: string[];
+}
+
 export const PI_PACKAGE_MANAGERS: readonly PiPackageManager[] = ["npm", "bun", "pnpm", "yarn"];
 
 export function guessPiPackageManager(piPath: string): PiPackageManager | undefined {
@@ -42,33 +47,22 @@ export function guessPiPackageManager(piPath: string): PiPackageManager | undefi
 }
 
 export function createPiGlobalInstallCommand(manager: PiPackageManager): string {
+  const invocation = createPiGlobalInstallInvocation(manager);
+  return [invocation.command, ...invocation.args].join(" ");
+}
+
+export function createPiGlobalInstallInvocation(
+  manager: PiPackageManager,
+): PackageManagerInvocation {
   const pkg = `${PI_PACKAGE_NAME}@latest`;
   switch (manager) {
     case "bun":
-      return `bun install --global ${pkg}`;
+      return { command: manager, args: ["install", "--global", pkg] };
     case "npm":
-      return `npm install --global --ignore-scripts ${pkg}`;
+      return { command: manager, args: ["install", "--global", "--ignore-scripts", pkg] };
     case "pnpm":
-      return `pnpm add --global ${pkg}`;
+      return { command: manager, args: ["add", "--global", pkg] };
     case "yarn":
-      return `yarn global add ${pkg}`;
+      return { command: manager, args: ["global", "add", pkg] };
   }
-}
-
-export function createPiUpgradeCommand(
-  manager: PiPackageManager,
-  piPath: string,
-  platform = process.platform,
-): string {
-  return `${createPiGlobalInstallCommand(manager)} && ${createPiUpdateCommand(piPath, platform)}`;
-}
-
-function createPiUpdateCommand(piPath: string, platform: string): string {
-  return `${quoteCommandPath(piPath, platform)} update`;
-}
-
-function quoteCommandPath(commandPath: string, platform: string): string {
-  if (/^[\w./:@%+-]+$/.test(commandPath)) return commandPath;
-  if (platform === "win32") return `"${commandPath.replaceAll('"', '""')}"`;
-  return `'${commandPath.replaceAll("'", "'\\''")}'`;
 }

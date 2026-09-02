@@ -4,7 +4,7 @@ import { describe, expect, it } from "vitest";
 import { resolvePiBinary } from "../src/_resolve.ts";
 import {
   createPiGlobalInstallCommand,
-  createPiUpgradeCommand,
+  createPiGlobalInstallInvocation,
   guessPiPackageManager,
 } from "../src/upgrade.ts";
 
@@ -263,16 +263,11 @@ describe("createPiGlobalInstallCommand", () => {
   });
 });
 
-describe("createPiUpgradeCommand", () => {
-  it("runs pi update after the global install", () => {
-    expect(createPiUpgradeCommand("npm", "/Users/dev/.npm-global/bin/pi", "linux")).toBe(
-      "npm install --global --ignore-scripts @earendil-works/pi-coding-agent@latest && /Users/dev/.npm-global/bin/pi update",
-    );
-  });
-
-  it("quotes pi paths with spaces", () => {
-    expect(createPiUpgradeCommand("npm", "/Users/dev/my tools/pi", "linux")).toBe(
-      "npm install --global --ignore-scripts @earendil-works/pi-coding-agent@latest && '/Users/dev/my tools/pi' update",
-    );
+describe("createPiGlobalInstallInvocation", () => {
+  it("returns structured npm arguments without a shell pipeline", () => {
+    expect(createPiGlobalInstallInvocation("npm")).toEqual({
+      command: "npm",
+      args: ["install", "--global", "--ignore-scripts", "@earendil-works/pi-coding-agent@latest"],
+    });
   });
 });

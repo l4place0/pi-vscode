@@ -1,5 +1,6 @@
 import { spawn, type ChildProcess, type SpawnOptions } from "node:child_process";
-import { extname } from "node:path";
+import { accessSync, constants } from "node:fs";
+import { extname, join } from "node:path";
 
 export interface PiInvocation {
   command: string;
@@ -16,6 +17,31 @@ export interface PiProcessOptions extends SpawnOptions {
 export interface PiExecResult {
   stdout: string;
   stderr: string;
+}
+
+export function resolveExecutablePath(
+  command: string,
+  options: {
+    platform?: NodeJS.Platform;
+    pathEnv?: string;
+    access?: (path: string, mode: number) => void;
+  } = {},
+): string {
+  const platform = options.platform ?? process.platform;
+  if (platform !== "win32" || extname(command)) return command;
+  const access = options.access ?? accessSync;
+  const extensions = [".cmd", ".exe", ".ps1", ".bat"];
+  for (const directory of (options.pathEnv ?? process.env.PATH ?? "").split(";")) {
+    if (!directory) continue;
+    for (const extension of extensions) {
+      const candidate = join(directory, command + extension);
+      try {
+        access(candidate, constants.F_OK);
+        return candidate;
+      } catch {}
+    }
+  }
+  return command;
 }
 
 export function createPiInvocation(

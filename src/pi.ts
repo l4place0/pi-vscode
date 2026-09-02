@@ -5,11 +5,12 @@ import { BRIDGE_BOOTSTRAP_LINES, BRIDGE_EXTENSION_PATH } from "./constants.ts";
 import { resolvePiBinary } from "./_resolve.ts";
 import {
   createPiGlobalInstallCommand,
-  createPiUpgradeCommand,
+  createPiGlobalInstallInvocation,
   guessPiPackageManager,
   PI_PACKAGE_MANAGERS,
   type PiPackageManager,
 } from "./upgrade.ts";
+import { execPi, resolveExecutablePath } from "./pi-process.ts";
 
 let piExistsCache: boolean | undefined;
 
@@ -66,10 +67,26 @@ export async function upgradePiBinary(): Promise<void> {
   }
   if (!manager) return;
 
-  const terminal = vscode.window.createTerminal({ name: "Upgrade Pi" });
-  terminal.show();
-  terminal.sendText(createPiUpgradeCommand(manager, piPath));
-  void vscode.window.showInformationMessage(`Upgrading Pi with ${manager}. Found pi at: ${piPath}`);
+  await vscode.window.withProgress(
+    {
+      location: vscode.ProgressLocation.Notification,
+      title: `Upgrading Pi with ${manager}`,
+      cancellable: true,
+    },
+    async (progress, token) => {
+      const controller = new AbortController();
+      token.onCancellationRequested(() => controller.abort());
+      const invocation = createPiGlobalInstallInvocation(manager);
+      progress.report({ message: "Installing the latest Pi CLI…" });
+      await execPi(resolveExecutablePath(invocation.command), invocation.args, {
+        env: process.env,
+        signal: controller.signal,
+      });
+      progress.report({ message: "Updating installed Pi packages…" });
+      await execPi(piPath, ["update"], { env: process.env, signal: controller.signal });
+    },
+  );
+  void vscode.window.showInformationMessage(`Pi and packages were upgraded with ${manager}.`);
 }
 
 export function createPiShellArgs(

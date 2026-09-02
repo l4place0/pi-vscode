@@ -2,7 +2,7 @@ import { mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
-import { createPiInvocation, execPi } from "../src/pi-process.ts";
+import { createPiInvocation, execPi, resolveExecutablePath } from "../src/pi-process.ts";
 
 const temporaryDirectories: string[] = [];
 
@@ -48,6 +48,28 @@ describe("createPiInvocation", () => {
     expect(invocation.args[4]).toContain("^&");
     expect(invocation.args[4]).toMatch(/\^+%PATH\^+%/);
     expect(invocation.windowsVerbatimArguments).toBe(true);
+  });
+});
+
+describe("resolveExecutablePath", () => {
+  it("resolves Windows package-manager cmd shims from PATH", () => {
+    const expected = "C:\\tools\\npm.cmd";
+    expect(
+      resolveExecutablePath("npm", {
+        platform: "win32",
+        pathEnv: "C:\\missing;C:\\tools",
+        access: (candidate) => {
+          if (candidate !== expected) throw new Error("ENOENT");
+        },
+      }),
+    ).toBe(expected);
+  });
+
+  it("leaves Unix and explicit executable paths unchanged", () => {
+    expect(resolveExecutablePath("npm", { platform: "linux" })).toBe("npm");
+    expect(resolveExecutablePath("C:\\tools\\npm.cmd", { platform: "win32" })).toBe(
+      "C:\\tools\\npm.cmd",
+    );
   });
 });
 
