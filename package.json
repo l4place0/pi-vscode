@@ -18,9 +18,7 @@
   "scripts": {
     "build": "rolldown -c rolldown.config.ts",
     "dev": "rolldown -c rolldown.config.ts -w",
-    "package": "pnpm build && pnpx @vscode/vsce package --no-dependencies",
-    "install-local": "pnpm package && code --install-extension *.vsix",
-    "release": "node scripts/release.ts",
+    "package": "pnpm build && pnpm exec vsce package --no-dependencies",
     "fmt": "oxlint . --fix && oxfmt .",
     "lint": "oxlint . && oxfmt --check .",
     "typecheck": "tsgo --noEmit --skipLibCheck",
