@@ -1,5 +1,6 @@
 import { posix, win32 } from "node:path";
 import * as vscode from "vscode";
+import { resolveWorkingDirectory } from "../workspace.ts";
 
 export function getWorkspaceFolders() {
   return (vscode.workspace.workspaceFolders ?? []).map((folder, index) => ({
@@ -16,7 +17,7 @@ export function getFileUri(filePath: string): vscode.Uri {
 
 export function resolveFilePath(filePath: string): string {
   if (isAbsolutePath(filePath)) return filePath;
-  const root = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath;
+  const root = resolveWorkingDirectory();
   if (!root)
     throw new Error(`Cannot resolve relative path without a workspace folder: ${filePath}`);
   const pathApi = root.includes("\\") ? win32 : posix;

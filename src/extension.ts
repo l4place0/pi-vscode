@@ -7,6 +7,7 @@ import { createPiEnvironment, createPiShellArgs, findPiBinary, upgradePiBinary }
 import { createPackagesViewProvider } from "./packages.ts";
 import { createSessionTracker } from "./sessions.ts";
 import { buildOpenWithFileContext, createNewTerminal } from "./terminal.ts";
+import { resolveWorkingDirectory } from "./workspace.ts";
 
 let extensionUri: vscode.Uri;
 let bridgeConfig: { url: string; token: string } | undefined;
@@ -33,6 +34,7 @@ export async function activate(context: vscode.ExtensionContext) {
   const openTerminal = async (
     extraArgs?: string[],
     contextLines?: string[],
+    cwd = resolveWorkingDirectory(),
   ): Promise<vscode.Terminal | undefined> => {
     const terminalId = randomUUID();
     const terminal = await createNewTerminal({
@@ -41,8 +43,9 @@ export async function activate(context: vscode.ExtensionContext) {
       extraArgs,
       contextLines,
       terminalId,
+      cwd,
     });
-    if (terminal) sessions.track(terminal, terminalId);
+    if (terminal) sessions.track(terminal, terminalId, cwd);
     return terminal;
   };
 
@@ -104,7 +107,7 @@ export async function activate(context: vscode.ExtensionContext) {
           name: TERMINAL_TITLE,
           shellPath: findPiBinary(),
           shellArgs: createPiShellArgs(extensionUri),
-          cwd: vscode.workspace.workspaceFolders?.[0]?.uri.fsPath,
+          cwd: resolveWorkingDirectory(),
           env: { ...baseEnv, PI_VSCODE_TERMINAL_ID: terminalId },
           iconPath: logoIcon,
         });

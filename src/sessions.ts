@@ -1,63 +1,73 @@
 import { existsSync } from "node:fs";
 import * as vscode from "vscode";
 import { TERMINAL_TITLE } from "./constants.ts";
+import { parseStoredSessions, type TerminalSession } from "./session-state.ts";
 import { createNewTerminal } from "./terminal.ts";
 
 const SESSIONS_KEY = "pi-vscode.terminalSessions";
 
-type TerminalSessionMap = Record<string, string>;
-
 export interface SessionTracker {
   update(terminalId: string, sessionFile: string): void;
-  track(terminal: vscode.Terminal, terminalId: string): void;
+  track(terminal: vscode.Terminal, terminalId: string, cwd?: string): void;
   onClose(terminal: vscode.Terminal): void;
   restore(extensionUri: vscode.Uri, bridgeConfig: { url: string; token: string }): Promise<void>;
 }
 
 export function createSessionTracker(context: vscode.ExtensionContext): SessionTracker {
   const terminalIds = new WeakMap<vscode.Terminal, string>();
+  const terminalCwds = new Map<string, string | undefined>();
 
-  const read = () => context.workspaceState.get<TerminalSessionMap>(SESSIONS_KEY) ?? {};
-  const write = (map: TerminalSessionMap) => context.workspaceState.update(SESSIONS_KEY, map);
+  const read = () => parseStoredSessions(context.workspaceState.get(SESSIONS_KEY));
+  const write = (sessions: Record<string, TerminalSession>) =>
+    context.workspaceState.update(SESSIONS_KEY, { version: 1, sessions });
 
   return {
     update(terminalId, sessionFile) {
-      const map = read();
-      if (map[terminalId] === sessionFile) return;
-      map[terminalId] = sessionFile;
-      void write(map);
+      const sessions = read();
+      const next = { sessionFile, cwd: terminalCwds.get(terminalId) };
+      if (
+        sessions[terminalId]?.sessionFile === next.sessionFile &&
+        sessions[terminalId]?.cwd === next.cwd
+      )
+        return;
+      sessions[terminalId] = next;
+      void write(sessions);
     },
-    track(terminal, terminalId) {
+    track(terminal, terminalId, cwd) {
       terminalIds.set(terminal, terminalId);
+      terminalCwds.set(terminalId, cwd);
     },
     onClose(terminal) {
       if (terminal.name !== TERMINAL_TITLE) return;
       if (terminal.exitStatus?.reason === vscode.TerminalExitReason.Shutdown) return;
       const id = terminalIds.get(terminal);
       if (!id) return;
-      const map = read();
-      if (!(id in map)) return;
-      delete map[id];
-      void write(map);
+      terminalCwds.delete(id);
+      const sessions = read();
+      if (!(id in sessions)) return;
+      delete sessions[id];
+      void write(sessions);
     },
     async restore(extensionUri, bridgeConfig) {
-      const map = read();
-      const valid: TerminalSessionMap = {};
-      for (const [terminalId, sessionFile] of Object.entries(map)) {
-        if (existsSync(sessionFile)) valid[terminalId] = sessionFile;
+      const sessions = read();
+      const valid: Record<string, TerminalSession> = {};
+      for (const [terminalId, session] of Object.entries(sessions)) {
+        if (existsSync(session.sessionFile)) valid[terminalId] = session;
       }
-      if (Object.keys(valid).length !== Object.keys(map).length) {
+      if (Object.keys(valid).length !== Object.keys(sessions).length) {
         await write(valid);
       }
-      for (const [terminalId, sessionFile] of Object.entries(valid)) {
+      for (const [terminalId, session] of Object.entries(valid)) {
         const terminal = await createNewTerminal({
           extensionUri,
           bridgeConfig,
           terminalId,
-          sessionFile,
+          sessionFile: session.sessionFile,
+          cwd: session.cwd,
         });
         if (terminal) {
           terminalIds.set(terminal, terminalId);
+          terminalCwds.set(terminalId, session.cwd);
           terminal.show(true);
         }
       }

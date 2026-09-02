@@ -1,6 +1,7 @@
 import * as vscode from "vscode";
 import { TERMINAL_TITLE } from "./constants.ts";
 import { createPiEnvironment, createPiShellArgs, ensurePiBinary } from "./pi.ts";
+import { resolveWorkingDirectory } from "./workspace.ts";
 
 export async function createNewTerminal(options: {
   extensionUri: vscode.Uri;
@@ -9,11 +10,12 @@ export async function createNewTerminal(options: {
   contextLines?: string[];
   terminalId?: string;
   sessionFile?: string;
+  cwd?: string;
 }): Promise<vscode.Terminal | undefined> {
   const piPath = await ensurePiBinary();
   if (!piPath) return undefined;
 
-  const cwd = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath;
+  const cwd = options.cwd ?? resolveWorkingDirectory();
   const viewColumn = findPiColumn() ?? findUnusedColumn() ?? vscode.ViewColumn.Beside;
   const extraArgs = options.sessionFile
     ? ["--session", options.sessionFile, ...(options.extraArgs ?? [])]
