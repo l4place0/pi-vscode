@@ -249,16 +249,16 @@ describe("guessPiPackageManager", () => {
 describe("createPiGlobalInstallCommand", () => {
   it("returns global install commands for supported package managers", () => {
     expect(createPiGlobalInstallCommand("npm")).toBe(
-      "npm install --global @mariozechner/pi-coding-agent@latest",
+      "npm install --global --ignore-scripts @earendil-works/pi-coding-agent@latest",
     );
     expect(createPiGlobalInstallCommand("bun")).toBe(
-      "bun install --global @mariozechner/pi-coding-agent@latest",
+      "bun install --global @earendil-works/pi-coding-agent@latest",
     );
     expect(createPiGlobalInstallCommand("pnpm")).toBe(
-      "pnpm add --global @mariozechner/pi-coding-agent@latest",
+      "pnpm add --global @earendil-works/pi-coding-agent@latest",
     );
     expect(createPiGlobalInstallCommand("yarn")).toBe(
-      "yarn global add @mariozechner/pi-coding-agent@latest",
+      "yarn global add @earendil-works/pi-coding-agent@latest",
     );
   });
 });
@@ -266,13 +266,13 @@ describe("createPiGlobalInstallCommand", () => {
 describe("createPiUpgradeCommand", () => {
   it("runs pi update after the global install", () => {
     expect(createPiUpgradeCommand("npm", "/Users/dev/.npm-global/bin/pi", "linux")).toBe(
-      "npm install --global @mariozechner/pi-coding-agent@latest && /Users/dev/.npm-global/bin/pi update",
+      "npm install --global --ignore-scripts @earendil-works/pi-coding-agent@latest && /Users/dev/.npm-global/bin/pi update",
     );
   });
 
   it("quotes pi paths with spaces", () => {
     expect(createPiUpgradeCommand("npm", "/Users/dev/my tools/pi", "linux")).toBe(
-      "npm install --global @mariozechner/pi-coding-agent@latest && '/Users/dev/my tools/pi' update",
+      "npm install --global --ignore-scripts @earendil-works/pi-coding-agent@latest && '/Users/dev/my tools/pi' update",
     );
   });
 });

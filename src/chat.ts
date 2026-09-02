@@ -19,7 +19,7 @@ export function createChatHandler(options: {
     const piPath = await ensurePiBinary();
     if (!piPath) {
       stream.markdown(
-        "Pi is not installed. Please install it with `npm i -g @mariozechner/pi-coding-agent`.",
+        "Pi is not installed. Please install it with `npm install --global --ignore-scripts @earendil-works/pi-coding-agent`.",
       );
       return;
     }

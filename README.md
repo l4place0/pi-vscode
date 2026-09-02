@@ -21,7 +21,7 @@ Minimal VS Code extension for [pi coding agent](https://pi.dev/).
 
 ## Requirements
 
-- `pi` CLI installed (`npm i -g @mariozechner/pi-coding-agent` or `bun i -g @mariozechner/pi-coding-agent`)
+- `pi` CLI installed (`npm install --global --ignore-scripts @earendil-works/pi-coding-agent` or `bun install --global @earendil-works/pi-coding-agent`)
 - An API key configured for at least one provider
 
 ## Install
