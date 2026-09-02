@@ -1,7 +1,7 @@
 {
   "name": "pi-vscode-fork",
   "displayName": "Pi VSCode Fork",
-  "version": "0.0.9",
+  "version": "0.1.0",
   "description": "VS Code extension for pi coding agent",
   "categories": [
     "AI",
