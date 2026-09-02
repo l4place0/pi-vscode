@@ -95,6 +95,42 @@ export function getTextDelta(event: RpcEvent): string | undefined {
     : undefined;
 }
 
+export class RpcLifecycle {
+  #legacyAgentEndTimer: ReturnType<typeof setTimeout> | undefined;
+
+  constructor(
+    private readonly endInput: () => void,
+    private readonly legacyGraceMs = 1000,
+  ) {}
+
+  handle(event: RpcEvent): void {
+    if (event.type === "agent_start") {
+      this.#clearLegacyTimer();
+      return;
+    }
+    if (event.type === "agent_settled") {
+      this.#clearLegacyTimer();
+      this.endInput();
+      return;
+    }
+    if (event.type !== "agent_end" || event.willRetry === true) return;
+    this.#clearLegacyTimer();
+    this.#legacyAgentEndTimer = setTimeout(() => {
+      this.#legacyAgentEndTimer = undefined;
+      this.endInput();
+    }, this.legacyGraceMs);
+  }
+
+  dispose(): void {
+    this.#clearLegacyTimer();
+  }
+
+  #clearLegacyTimer(): void {
+    if (this.#legacyAgentEndTimer) clearTimeout(this.#legacyAgentEndTimer);
+    this.#legacyAgentEndTimer = undefined;
+  }
+}
+
 function readString(value: unknown): string {
   return typeof value === "string" ? value : "Pi extension request";
 }

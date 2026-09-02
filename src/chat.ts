@@ -3,7 +3,13 @@ import * as vscode from "vscode";
 import { toErrorMessage } from "./bridge/utils.ts";
 import { createPiEnvironment, createPiRpcArgs, ensurePiBinary } from "./pi.ts";
 import { spawnPi } from "./pi-process.ts";
-import { getTextDelta, handleExtensionUiRequest, JsonlReader, type RpcEvent } from "./rpc.ts";
+import {
+  getTextDelta,
+  handleExtensionUiRequest,
+  JsonlReader,
+  RpcLifecycle,
+  type RpcEvent,
+} from "./rpc.ts";
 import { createNewTerminal } from "./terminal.ts";
 import { resolveWorkingDirectory } from "./workspace.ts";
 
@@ -88,6 +94,9 @@ async function runPiRpcPrompt(options: {
   };
 
   const ui = createRpcUiAdapter();
+  const lifecycle = new RpcLifecycle(() => {
+    if (!child.stdin.destroyed) child.stdin.end();
+  });
   const handleEvent = (event: RpcEvent) => {
     if (event.type === "extension_ui_request") {
       void handleExtensionUiRequest(event, ui).then((response) => {
@@ -119,9 +128,7 @@ async function runPiRpcPrompt(options: {
       child.kill();
       return;
     }
-    if (event.type === "agent_end") {
-      child.stdin.end();
-    }
+    lifecycle.handle(event);
   };
 
   let resolvePromise!: (value: { hadOutput: boolean }) => void;
@@ -154,6 +161,7 @@ async function runPiRpcPrompt(options: {
 
     child.on("close", (code, signal) => {
       reader.end();
+      lifecycle.dispose();
       if (resolved) return;
       if (options.token.isCancellationRequested) {
         finish(resolve, reject, new Error("Pi RPC request cancelled."));

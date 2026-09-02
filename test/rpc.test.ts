@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { getTextDelta, handleExtensionUiRequest, JsonlReader } from "../src/rpc.ts";
+import { getTextDelta, handleExtensionUiRequest, JsonlReader, RpcLifecycle } from "../src/rpc.ts";
 
 describe("JsonlReader", () => {
   it("preserves UTF-8 characters split across chunks and accepts CRLF", () => {
@@ -94,5 +94,37 @@ describe("RPC lifecycle", () => {
         assistantMessageEvent: { type: "text_delta", delta: "hello" },
       }),
     ).toBe("hello");
+  });
+
+  it("waits for agent_settled before ending modern sessions", () => {
+    const endInput = vi.fn();
+    const lifecycle = new RpcLifecycle(endInput, 1000);
+    lifecycle.handle({ type: "agent_end", willRetry: false });
+    lifecycle.handle({ type: "agent_settled" });
+    expect(endInput).toHaveBeenCalledOnce();
+  });
+
+  it("does not end retrying sessions at agent_end", () => {
+    vi.useFakeTimers();
+    const endInput = vi.fn();
+    const lifecycle = new RpcLifecycle(endInput, 1000);
+    lifecycle.handle({ type: "agent_end", willRetry: true });
+    vi.advanceTimersByTime(1000);
+    expect(endInput).not.toHaveBeenCalled();
+    lifecycle.dispose();
+    vi.useRealTimers();
+  });
+
+  it("falls back to agent_end for older Pi versions", () => {
+    vi.useFakeTimers();
+    const endInput = vi.fn();
+    const lifecycle = new RpcLifecycle(endInput, 1000);
+    lifecycle.handle({ type: "agent_end" });
+    vi.advanceTimersByTime(999);
+    expect(endInput).not.toHaveBeenCalled();
+    vi.advanceTimersByTime(1);
+    expect(endInput).toHaveBeenCalledOnce();
+    lifecycle.dispose();
+    vi.useRealTimers();
   });
 });
