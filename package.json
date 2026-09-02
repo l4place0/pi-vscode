@@ -1,6 +1,6 @@
 {
-  "name": "pi-vscode",
-  "displayName": "Pi Coding Agent",
+  "name": "pi-vscode-fork",
+  "displayName": "Pi VSCode Fork",
   "version": "0.0.9",
   "description": "VS Code extension for pi coding agent",
   "categories": [
@@ -38,7 +38,7 @@
   },
   "contributes": {
     "icons": {
-      "pi-logo": {
+      "pi-vscode-fork-logo": {
         "description": "Pi logo icon",
         "default": {
           "fontPath": "assets/fonts/pi-icons.woff2",
@@ -48,41 +48,41 @@
     },
     "chatParticipants": [
       {
-        "id": "pi-vscode.chat",
-        "fullName": "Pi Coding Agent",
-        "name": "pi",
+        "id": "pi-vscode-fork.chat",
+        "fullName": "Pi VSCode Fork",
+        "name": "pi-fork",
         "description": "Chat with Pi coding agent",
         "isSticky": true
       }
     ],
     "commands": [
       {
-        "command": "pi-vscode.open",
-        "title": "Pi: Open",
+        "command": "pi-vscode-fork.open",
+        "title": "Pi Fork: Open",
         "icon": {
           "light": "assets/logo-light.svg",
           "dark": "assets/logo.svg"
         }
       },
       {
-        "command": "pi-vscode.openWithFile",
-        "title": "Pi: Open with File",
+        "command": "pi-vscode-fork.openWithFile",
+        "title": "Pi Fork: Open with File",
         "icon": {
           "light": "assets/logo-light.svg",
           "dark": "assets/logo.svg"
         }
       },
       {
-        "command": "pi-vscode.sendSelection",
-        "title": "Pi: Send Selection"
+        "command": "pi-vscode-fork.sendSelection",
+        "title": "Pi Fork: Send Selection"
       },
       {
-        "command": "pi-vscode.upgrade",
-        "title": "Pi: Upgrade Pi and Packages"
+        "command": "pi-vscode-fork.updatePackages",
+        "title": "Pi Fork: Upgrade Pi and Packages"
       },
       {
-        "command": "pi-vscode.openInNewWindow",
-        "title": "Pi: Open in New Window",
+        "command": "pi-vscode-fork.openInNewWindow",
+        "title": "Pi Fork: Open in New Window",
         "icon": {
           "light": "assets/logo-light.svg",
           "dark": "assets/logo.svg"
@@ -92,13 +92,13 @@
     "menus": {
       "editor/title": [
         {
-          "command": "pi-vscode.openWithFile",
+          "command": "pi-vscode-fork.openWithFile",
           "group": "navigation"
         }
       ],
       "explorer/context": [
         {
-          "command": "pi-vscode.openWithFile",
+          "command": "pi-vscode-fork.openWithFile",
           "group": "navigation"
         }
       ]
@@ -106,34 +106,34 @@
     "terminal": {
       "profiles": [
         {
-          "id": "pi-vscode.terminal-profile",
-          "title": "Pi",
-          "icon": "pi-logo"
+          "id": "pi-vscode-fork.terminal-profile",
+          "title": "Pi Fork",
+          "icon": "pi-vscode-fork-logo"
         }
       ]
     },
     "viewsContainers": {
       "activitybar": [
         {
-          "id": "pi",
-          "title": "Pi",
+          "id": "pi-vscode-fork",
+          "title": "Pi Fork",
           "icon": "assets/logo.svg"
         }
       ]
     },
     "views": {
-      "pi": [
+      "pi-vscode-fork": [
         {
           "type": "webview",
-          "id": "pi-vscode.packages",
+          "id": "pi-vscode-fork.packages",
           "name": "Packages"
         }
       ]
     },
     "configuration": {
-      "title": "Pi",
+      "title": "Pi VSCode Fork",
       "properties": {
-        "pi-vscode.path": {
+        "pi-vscode-fork.path": {
           "type": "string",
           "default": "",
           "description": "Absolute path to the pi binary. Leave empty for auto-detection."
@@ -142,7 +142,7 @@
     },
     "keybindings": [
       {
-        "command": "pi-vscode.open",
+        "command": "pi-vscode-fork.open",
         "key": "ctrl+alt+3"
       }
     ]

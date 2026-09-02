@@ -1,6 +1,7 @@
 import { type ChildProcess } from "node:child_process";
 import { randomBytes } from "node:crypto";
 import * as vscode from "vscode";
+import { CONTRIBUTION_IDS } from "./constants.ts";
 import { parseInstalledPackages, readPackageSource } from "./packages-core.ts";
 import { execPi, spawnPi } from "./pi-process.ts";
 import { resolveWorkingDirectory } from "./workspace.ts";
@@ -57,7 +58,7 @@ export function createPackagesViewProvider(findPiBinary: () => string): vscode.W
         } else if (msg.type === "refresh") {
           void refreshInstalled();
         } else if (msg.type === "upgrade") {
-          void vscode.commands.executeCommand("pi-vscode.upgrade");
+          void vscode.commands.executeCommand(CONTRIBUTION_IDS.updatePackages);
         }
       });
     },

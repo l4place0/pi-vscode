@@ -14,7 +14,7 @@ import {
 let piExistsCache: boolean | undefined;
 
 export function findPiBinary(): string {
-  const config = vscode.workspace.getConfiguration("pi-vscode");
+  const config = vscode.workspace.getConfiguration("pi-vscode-fork");
   return resolvePiBinary({
     customPath: config.get<string>("path") || undefined,
     workspaceDirs: (vscode.workspace.workspaceFolders ?? []).map((folder) => folder.uri.fsPath),

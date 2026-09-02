@@ -4,7 +4,7 @@ import { TERMINAL_TITLE } from "./constants.ts";
 import { parseStoredSessions, type TerminalSession } from "./session-state.ts";
 import { createNewTerminal } from "./terminal.ts";
 
-const SESSIONS_KEY = "pi-vscode.terminalSessions";
+const SESSIONS_KEY = "pi-vscode-fork.terminalSessions";
 
 export interface SessionTracker {
   update(terminalId: string, sessionFile: string): void;

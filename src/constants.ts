@@ -1,4 +1,15 @@
-export const TERMINAL_TITLE = "PI Code";
+export const TERMINAL_TITLE = "Pi Fork";
+
+export const CONTRIBUTION_IDS = {
+  chat: "pi-vscode-fork.chat",
+  open: "pi-vscode-fork.open",
+  openWithFile: "pi-vscode-fork.openWithFile",
+  sendSelection: "pi-vscode-fork.sendSelection",
+  openInNewWindow: "pi-vscode-fork.openInNewWindow",
+  updatePackages: "pi-vscode-fork.updatePackages",
+  terminalProfile: "pi-vscode-fork.terminal-profile",
+  packagesView: "pi-vscode-fork.packages",
+} as const;
 
 export const BRIDGE_EXTENSION_PATH = "bridge/pi-vscode-bridge.js";
 

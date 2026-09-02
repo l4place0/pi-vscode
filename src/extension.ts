@@ -2,7 +2,7 @@ import { randomUUID } from "node:crypto";
 import * as vscode from "vscode";
 import { createBridge } from "./bridge/server.ts";
 import { createChatHandler } from "./chat.ts";
-import { TERMINAL_TITLE } from "./constants.ts";
+import { CONTRIBUTION_IDS, TERMINAL_TITLE } from "./constants.ts";
 import { createPiEnvironment, createPiShellArgs, findPiBinary, upgradePiBinary } from "./pi.ts";
 import { createPiTerminalLaunch } from "./pi-process.ts";
 import { createPackagesViewProvider } from "./packages.ts";
@@ -51,7 +51,7 @@ export async function activate(context: vscode.ExtensionContext) {
   };
 
   const participant = vscode.chat.createChatParticipant(
-    "pi-vscode.chat",
+    CONTRIBUTION_IDS.chat,
     createChatHandler({
       extensionUri,
       getBridgeConfig: () => bridgeConfig,
@@ -64,25 +64,28 @@ export async function activate(context: vscode.ExtensionContext) {
   participant.iconPath = logoIcon;
 
   const statusBarItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Right, 100);
-  statusBarItem.text = "$(pi-logo) Pi";
+  statusBarItem.text = "$(pi-vscode-fork-logo) Pi Fork";
   statusBarItem.tooltip = "Open Pi Terminal";
-  statusBarItem.command = "pi-vscode.open";
+  statusBarItem.command = CONTRIBUTION_IDS.open;
   statusBarItem.show();
 
   context.subscriptions.push(
     participant,
     statusBarItem,
     vscode.window.onDidCloseTerminal((terminal) => sessions.onClose(terminal)),
-    vscode.commands.registerCommand("pi-vscode.open", async () => {
+    vscode.commands.registerCommand(CONTRIBUTION_IDS.open, async () => {
       const terminal = await openTerminal();
       terminal?.show();
     }),
-    vscode.commands.registerCommand("pi-vscode.openWithFile", async (resourceUri?: vscode.Uri) => {
-      const { cwd, contextLines } = await buildOpenWithFileContext(resourceUri);
-      const terminal = await openTerminal(undefined, contextLines, cwd);
-      terminal?.show();
-    }),
-    vscode.commands.registerCommand("pi-vscode.sendSelection", async () => {
+    vscode.commands.registerCommand(
+      CONTRIBUTION_IDS.openWithFile,
+      async (resourceUri?: vscode.Uri) => {
+        const { cwd, contextLines } = await buildOpenWithFileContext(resourceUri);
+        const terminal = await openTerminal(undefined, contextLines, cwd);
+        terminal?.show();
+      },
+    ),
+    vscode.commands.registerCommand(CONTRIBUTION_IDS.sendSelection, async () => {
       const editor = vscode.window.activeTextEditor;
       if (!editor) return;
       const selection = editor.document.getText(editor.selection);
@@ -90,18 +93,18 @@ export async function activate(context: vscode.ExtensionContext) {
       const terminal = await openTerminal([selection]);
       terminal?.show();
     }),
-    vscode.commands.registerCommand("pi-vscode.openInNewWindow", async () => {
+    vscode.commands.registerCommand(CONTRIBUTION_IDS.openInNewWindow, async () => {
       const terminal = await openTerminal();
       if (!terminal) return;
       terminal.show();
       await vscode.commands.executeCommand("workbench.action.moveEditorToNewWindow");
     }),
-    vscode.commands.registerCommand("pi-vscode.upgrade", upgradePiBinary),
+    vscode.commands.registerCommand(CONTRIBUTION_IDS.updatePackages, upgradePiBinary),
     vscode.window.registerWebviewViewProvider(
-      "pi-vscode.packages",
+      CONTRIBUTION_IDS.packagesView,
       createPackagesViewProvider(findPiBinary),
     ),
-    vscode.window.registerTerminalProfileProvider("pi-vscode.terminal-profile", {
+    vscode.window.registerTerminalProfileProvider(CONTRIBUTION_IDS.terminalProfile, {
       provideTerminalProfile() {
         const terminalId = randomUUID();
         const baseEnv = createPiEnvironment(bridgeConfig);
