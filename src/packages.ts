@@ -1,5 +1,7 @@
 import { type ChildProcess } from "node:child_process";
+import { randomBytes } from "node:crypto";
 import * as vscode from "vscode";
+import { parseInstalledPackages, readPackageSource } from "./packages-core.ts";
 import { execPi, spawnPi } from "./pi-process.ts";
 import { resolveWorkingDirectory } from "./workspace.ts";
 
@@ -7,7 +9,8 @@ export function createPackagesViewProvider(findPiBinary: () => string): vscode.W
   return {
     resolveWebviewView(webviewView: vscode.WebviewView) {
       webviewView.webview.options = { enableScripts: true };
-      webviewView.webview.html = getPackagesHtml();
+      const nonce = randomBytes(16).toString("base64");
+      webviewView.webview.html = getPackagesHtml(nonce);
       let activeProcess: ChildProcess | undefined;
 
       const refreshInstalled = async () => {
@@ -20,6 +23,7 @@ export function createPackagesViewProvider(findPiBinary: () => string): vscode.W
       };
 
       const runCommand = (args: string[]) => {
+        if (activeProcess) return;
         const bin = findPiBinary();
         webviewView.webview.postMessage({ type: "loading", loading: true, output: "" });
         const proc = spawnPi(bin, args, {
@@ -40,11 +44,14 @@ export function createPackagesViewProvider(findPiBinary: () => string): vscode.W
       };
 
       void refreshInstalled();
-      webviewView.webview.onDidReceiveMessage((msg) => {
-        if (msg.type === "install" && msg.package) {
-          runCommand(["install", msg.package]);
-        } else if (msg.type === "uninstall" && msg.package) {
-          runCommand(["remove", msg.package]);
+      webviewView.webview.onDidReceiveMessage((value: unknown) => {
+        if (!value || typeof value !== "object") return;
+        const msg = value as Record<string, unknown>;
+        const packageSource = readPackageSource(msg.package);
+        if (msg.type === "install" && packageSource) {
+          runCommand(["install", packageSource]);
+        } else if (msg.type === "uninstall" && packageSource) {
+          runCommand(["remove", packageSource]);
         } else if (msg.type === "cancel") {
           activeProcess?.kill();
         } else if (msg.type === "refresh") {
@@ -57,23 +64,12 @@ export function createPackagesViewProvider(findPiBinary: () => string): vscode.W
   };
 }
 
-function parseInstalledPackages(output: string): { source: string; path: string }[] {
-  const packages: { source: string; path: string }[] = [];
-  const lines = output.split("\n");
-  for (let i = 0; i < lines.length; i++) {
-    const trimmed = lines[i]!.trim();
-    if (trimmed.startsWith("npm:") || trimmed.startsWith("github:") || trimmed.startsWith("http")) {
-      const pathLine = lines[i + 1]?.trim() || "";
-      packages.push({ source: trimmed, path: pathLine });
-    }
-  }
-  return packages;
-}
-
-function getPackagesHtml(): string {
+function getPackagesHtml(nonce: string): string {
   return /* html */ `<!DOCTYPE html>
 <html style="height:100%;margin:0;padding:0">
-<head><style>
+<head>
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'; script-src 'nonce-${nonce}'; connect-src https://registry.npmjs.org; img-src https: data:; media-src https:;">
+<style>
 * { box-sizing: border-box; }
 body { height:100%; margin:0; padding:0; font-family: var(--vscode-font-family); font-size: 13px; color: var(--vscode-foreground); display:flex; flex-direction:column; overflow-x:hidden; }
 * { word-wrap:break-word; overflow-wrap:break-word; }
@@ -116,22 +112,24 @@ body { height:100%; margin:0; padding:0; font-family: var(--vscode-font-family);
 <div id="installed-section" style="display:none;padding:8px;border-bottom:1px solid var(--vscode-widget-border,var(--vscode-panel-border,transparent))">
   <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
     <strong style="font-size:12px">Installed</strong>
-    <button onclick="vscode.postMessage({type:'refresh'})" style="padding:2px 8px;cursor:pointer;background:transparent;color:var(--vscode-foreground);border:1px solid var(--vscode-widget-border,transparent);border-radius:3px;font-size:11px;opacity:0.7">↻ Refresh</button>
+    <button id="refresh-btn" style="padding:2px 8px;cursor:pointer;background:transparent;color:var(--vscode-foreground);border:1px solid var(--vscode-widget-border,transparent);border-radius:3px;font-size:11px;opacity:0.7">↻ Refresh</button>
   </div>
   <div id="installed-list"></div>
 </div>
 <div id="loading-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:100;flex-direction:column;align-items:center;justify-content:center;gap:8px;font-size:13px;color:var(--vscode-foreground)">
   <strong>Working...</strong>
   <pre id="output-log" style="max-height:200px;width:80%;overflow-y:auto;background:var(--vscode-editor-background);border:1px solid var(--vscode-widget-border,transparent);border-radius:4px;padding:6px;font-size:11px;margin:0;white-space:pre-wrap;word-break:break-all"></pre>
-  <button onclick="vscode.postMessage({type:'cancel'})" style="padding:4px 12px;cursor:pointer;background:var(--vscode-inputValidation-errorBackground,#d32f2f);color:#fff;border:none;border-radius:4px;font-size:12px">Cancel</button>
+  <button id="cancel-btn" style="padding:4px 12px;cursor:pointer;background:var(--vscode-inputValidation-errorBackground,#d32f2f);color:#fff;border:none;border-radius:4px;font-size:12px">Cancel</button>
 </div>
 <div id="list" class="pkg-list"><div class="status">Loading...</div></div>
 <div style="padding:4px 8px 8px;text-align:right;flex-shrink:0"><a href="https://shittycodingagent.ai/packages" target="_blank" style="font-size:11px;color:var(--vscode-textLink-foreground);text-decoration:none;opacity:0.8">Browse packages ↗</a></div>
-<script>
+<script nonce="${nonce}">
 const vscode = acquireVsCodeApi();
 const searchInput = document.getElementById('search');
 const searchBtn = document.getElementById('search-btn');
 const upgradeBtn = document.getElementById('upgrade-btn');
+const refreshBtn = document.getElementById('refresh-btn');
+const cancelBtn = document.getElementById('cancel-btn');
 const list = document.getElementById('list');
 let allPackages = [];
 let installedSet = new Set();
@@ -147,8 +145,8 @@ async function fetchPackages() {
       version: o.package.version || '',
       author: o.package.publisher?.username || o.package.author?.name || '',
       keywords: (o.package.keywords || []).join(' '),
-      npm: o.package.links?.npm || ('https://www.npmjs.com/package/' + o.package.name),
-      repo: o.package.links?.repository || '',
+      npm: safeWebUrl(o.package.links?.npm) || ('https://www.npmjs.com/package/' + encodeURIComponent(o.package.name)),
+      repo: safeWebUrl(o.package.links?.repository),
       piLabels: [],
       image: '',
       video: '',
@@ -166,8 +164,8 @@ async function fetchPackages() {
           if (pkg.pi.prompts?.length) labels.push('prompts');
           if (pkg.pi.themes?.length) labels.push('themes');
           p.piLabels = labels;
-          if (pkg.pi.image) p.image = pkg.pi.image;
-          if (pkg.pi.video) p.video = pkg.pi.video;
+          if (pkg.pi.image) p.image = safeWebUrl(pkg.pi.image);
+          if (pkg.pi.video) p.video = safeWebUrl(pkg.pi.video);
         }
       } catch {}
     }));
@@ -205,22 +203,35 @@ function render(query) {
       '<div class="pkg-meta"><span>v' + esc(p.version) + '</span>' + (p.author ? '<span>' + esc(p.author) + '</span>' : '') + '</div>' +
       '<div class="pkg-install-bar">' +
         (installedSet.has('npm:' + p.name)
-          ? '<button class="uninstall-btn" onclick="uninstall(\\'npm:' + esc(p.name) + '\\')">Uninstall</button>'
-          : '<button onclick="install(\\'npm:' + esc(p.name) + '\\')">Install</button>') +
+          ? '<button class="uninstall-btn" data-action="uninstall" data-package="' + encodeURIComponent('npm:' + p.name) + '">Uninstall</button>'
+          : '<button data-action="install" data-package="' + encodeURIComponent('npm:' + p.name) + '">Install</button>') +
       '</div>' +
     '</div>';
   }).join('');
 }
 
 function esc(s) { const d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
-
-function install(pkg) {
-  vscode.postMessage({ type: 'install', package: pkg });
+function safeWebUrl(value) {
+  try {
+    const url = new URL(value);
+    return url.protocol === 'https:' ? url.href : '';
+  } catch {
+    return '';
+  }
 }
 
 searchBtn.addEventListener('click', () => render(searchInput.value.trim()));
 upgradeBtn.addEventListener('click', () => vscode.postMessage({ type: 'upgrade' }));
+refreshBtn.addEventListener('click', () => vscode.postMessage({ type: 'refresh' }));
+cancelBtn.addEventListener('click', () => vscode.postMessage({ type: 'cancel' }));
 searchInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') render(searchInput.value.trim()); });
+document.addEventListener('click', (event) => {
+  const button = event.target.closest('button[data-action][data-package]');
+  if (!button) return;
+  const action = button.dataset.action;
+  if (action !== 'install' && action !== 'uninstall') return;
+  vscode.postMessage({ type: action, package: decodeURIComponent(button.dataset.package) });
+});
 
 window.addEventListener('message', (e) => {
   const msg = e.data;
@@ -253,15 +264,11 @@ window.addEventListener('message', (e) => {
     container.innerHTML = msg.packages.map(p =>
       '<div class="installed-item">' +
         '<code>' + esc(p.source) + '</code>' +
-        '<button class="uninstall-btn" onclick="uninstall(\\'' + esc(p.source) + '\\')">Uninstall</button>' +
+        '<button class="uninstall-btn" data-action="uninstall" data-package="' + encodeURIComponent(p.source) + '">Uninstall</button>' +
       '</div>'
     ).join('');
   }
 });
-
-function uninstall(pkg) {
-  vscode.postMessage({ type: 'uninstall', package: pkg });
-}
 
 fetchPackages();
 </script>
