@@ -4,6 +4,7 @@ import { createBridge } from "./bridge/server.ts";
 import { createChatHandler } from "./chat.ts";
 import { TERMINAL_TITLE } from "./constants.ts";
 import { createPiEnvironment, createPiShellArgs, findPiBinary, upgradePiBinary } from "./pi.ts";
+import { createPiTerminalLaunch } from "./pi-process.ts";
 import { createPackagesViewProvider } from "./packages.ts";
 import { createSessionTracker } from "./sessions.ts";
 import { buildOpenWithFileContext, createNewTerminal } from "./terminal.ts";
@@ -104,10 +105,11 @@ export async function activate(context: vscode.ExtensionContext) {
       provideTerminalProfile() {
         const terminalId = randomUUID();
         const baseEnv = createPiEnvironment(bridgeConfig);
+        const launch = createPiTerminalLaunch(findPiBinary(), createPiShellArgs(extensionUri));
         return new vscode.TerminalProfile({
           name: TERMINAL_TITLE,
-          shellPath: findPiBinary(),
-          shellArgs: createPiShellArgs(extensionUri),
+          shellPath: launch.shellPath,
+          shellArgs: launch.shellArgs,
           cwd: resolveWorkingDirectory(),
           env: { ...baseEnv, PI_VSCODE_TERMINAL_ID: terminalId },
           iconPath: logoIcon,

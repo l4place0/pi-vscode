@@ -1,5 +1,7 @@
-import { execFile, spawn, type ChildProcess } from "node:child_process";
+import { type ChildProcess } from "node:child_process";
 import * as vscode from "vscode";
+import { execPi, spawnPi } from "./pi-process.ts";
+import { resolveWorkingDirectory } from "./workspace.ts";
 
 export function createPackagesViewProvider(findPiBinary: () => string): vscode.WebviewViewProvider {
   return {
@@ -8,18 +10,22 @@ export function createPackagesViewProvider(findPiBinary: () => string): vscode.W
       webviewView.webview.html = getPackagesHtml();
       let activeProcess: ChildProcess | undefined;
 
-      const refreshInstalled = () => {
+      const refreshInstalled = async () => {
         const bin = findPiBinary();
-        execFile(bin, ["list"], (_err, stdout) => {
-          const packages = parseInstalledPackages(stdout || "");
-          webviewView.webview.postMessage({ type: "installed", packages });
-        });
+        const { stdout } = await execPi(bin, ["list"], { cwd: resolveWorkingDirectory() }).catch(
+          () => ({ stdout: "", stderr: "" }),
+        );
+        const packages = parseInstalledPackages(stdout);
+        void webviewView.webview.postMessage({ type: "installed", packages });
       };
 
       const runCommand = (args: string[]) => {
         const bin = findPiBinary();
         webviewView.webview.postMessage({ type: "loading", loading: true, output: "" });
-        const proc = spawn(bin, args);
+        const proc = spawnPi(bin, args, {
+          cwd: resolveWorkingDirectory(),
+          stdio: ["ignore", "pipe", "pipe"],
+        });
         activeProcess = proc;
         const onData = (chunk: Buffer) => {
           webviewView.webview.postMessage({ type: "output", text: chunk.toString() });
@@ -29,11 +35,11 @@ export function createPackagesViewProvider(findPiBinary: () => string): vscode.W
         proc.on("close", () => {
           activeProcess = undefined;
           webviewView.webview.postMessage({ type: "loading", loading: false });
-          refreshInstalled();
+          void refreshInstalled();
         });
       };
 
-      refreshInstalled();
+      void refreshInstalled();
       webviewView.webview.onDidReceiveMessage((msg) => {
         if (msg.type === "install" && msg.package) {
           runCommand(["install", msg.package]);
@@ -42,7 +48,7 @@ export function createPackagesViewProvider(findPiBinary: () => string): vscode.W
         } else if (msg.type === "cancel") {
           activeProcess?.kill();
         } else if (msg.type === "refresh") {
-          refreshInstalled();
+          void refreshInstalled();
         } else if (msg.type === "upgrade") {
           void vscode.commands.executeCommand("pi-vscode.upgrade");
         }

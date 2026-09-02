@@ -2,6 +2,7 @@ import * as vscode from "vscode";
 import { TERMINAL_TITLE } from "./constants.ts";
 import { createOpenContextLines, type EditorSelectionContext } from "./open-context.ts";
 import { createPiEnvironment, createPiShellArgs, ensurePiBinary } from "./pi.ts";
+import { createPiTerminalLaunch } from "./pi-process.ts";
 import { resolveWorkingDirectory } from "./workspace.ts";
 
 export async function createNewTerminal(options: {
@@ -25,6 +26,7 @@ export async function createNewTerminal(options: {
     extraArgs,
     contextLines: options.contextLines,
   });
+  const launch = createPiTerminalLaunch(piPath, shellArgs);
 
   const baseEnv = createPiEnvironment(options.bridgeConfig);
   const env = options.terminalId
@@ -33,8 +35,8 @@ export async function createNewTerminal(options: {
 
   const terminal = vscode.window.createTerminal({
     name: TERMINAL_TITLE,
-    shellPath: piPath,
-    shellArgs: shellArgs.length > 0 ? shellArgs : undefined,
+    shellPath: launch.shellPath,
+    shellArgs: launch.shellArgs.length > 0 ? launch.shellArgs : undefined,
     location: { viewColumn },
     isTransient: true,
     cwd,

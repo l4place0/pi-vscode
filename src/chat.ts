@@ -1,8 +1,9 @@
-import { spawn } from "node:child_process";
+import type { ChildProcessWithoutNullStreams } from "node:child_process";
 import { StringDecoder } from "node:string_decoder";
 import * as vscode from "vscode";
 import { toErrorMessage } from "./bridge/utils.ts";
 import { createPiEnvironment, createPiRpcArgs, ensurePiBinary } from "./pi.ts";
+import { spawnPi } from "./pi-process.ts";
 import { createNewTerminal } from "./terminal.ts";
 import { resolveWorkingDirectory } from "./workspace.ts";
 
@@ -58,14 +59,14 @@ async function runPiRpcPrompt(options: {
   bridgeConfig?: { url: string; token: string };
 }): Promise<{ hadOutput: boolean }> {
   const cwd = resolveWorkingDirectory();
-  const child = spawn(options.piPath, createPiRpcArgs(options.extensionUri), {
+  const child = spawnPi(options.piPath, createPiRpcArgs(options.extensionUri), {
     cwd,
     env: {
       ...process.env,
       ...createPiEnvironment(options.bridgeConfig),
     },
     stdio: ["pipe", "pipe", "pipe"],
-  });
+  }) as ChildProcessWithoutNullStreams;
 
   let stdoutBuffer = "";
   let stderrBuffer = "";
