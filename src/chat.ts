@@ -1,9 +1,9 @@
 import type { ChildProcessWithoutNullStreams } from "node:child_process";
-import { StringDecoder } from "node:string_decoder";
 import * as vscode from "vscode";
 import { toErrorMessage } from "./bridge/utils.ts";
 import { createPiEnvironment, createPiRpcArgs, ensurePiBinary } from "./pi.ts";
 import { spawnPi } from "./pi-process.ts";
+import { getTextDelta, handleExtensionUiRequest, JsonlReader, type RpcEvent } from "./rpc.ts";
 import { createNewTerminal } from "./terminal.ts";
 import { resolveWorkingDirectory } from "./workspace.ts";
 
@@ -68,11 +68,9 @@ async function runPiRpcPrompt(options: {
     stdio: ["pipe", "pipe", "pipe"],
   }) as ChildProcessWithoutNullStreams;
 
-  let stdoutBuffer = "";
   let stderrBuffer = "";
   let hadOutput = false;
   let resolved = false;
-  const decoder = new StringDecoder("utf8");
 
   const finish = (
     resolve: (value: { hadOutput: boolean }) => void,
@@ -89,19 +87,50 @@ async function runPiRpcPrompt(options: {
     child.stdin.write(`${JSON.stringify(command)}\n`);
   };
 
-  const flushLines = (chunk: Buffer | string, onLine: (line: string) => void) => {
-    stdoutBuffer += typeof chunk === "string" ? chunk : decoder.write(chunk);
-    while (true) {
-      const newlineIndex = stdoutBuffer.indexOf("\n");
-      if (newlineIndex === -1) break;
-      let line = stdoutBuffer.slice(0, newlineIndex);
-      stdoutBuffer = stdoutBuffer.slice(newlineIndex + 1);
-      if (line.endsWith("\r")) line = line.slice(0, -1);
-      if (line) onLine(line);
+  const ui = createRpcUiAdapter();
+  const handleEvent = (event: RpcEvent) => {
+    if (event.type === "extension_ui_request") {
+      void handleExtensionUiRequest(event, ui).then((response) => {
+        if (response && !child.stdin.destroyed) sendCommand(response);
+      });
+      return;
+    }
+    const delta = getTextDelta(event);
+    if (delta !== undefined) {
+      hadOutput = true;
+      options.stream.markdown(delta);
+      return;
+    }
+    if (event.type === "response" && event.command === "prompt" && event.success === false) {
+      finish(
+        resolvePromise,
+        rejectPromise,
+        new Error(String(event.error ?? "Pi RPC prompt failed")),
+      );
+      child.kill();
+      return;
+    }
+    if (event.type === "extension_error") {
+      finish(
+        resolvePromise,
+        rejectPromise,
+        new Error(String(event.error ?? event.message ?? "Pi extension failed")),
+      );
+      child.kill();
+      return;
+    }
+    if (event.type === "agent_end") {
+      child.stdin.end();
     }
   };
 
+  let resolvePromise!: (value: { hadOutput: boolean }) => void;
+  let rejectPromise!: (error: Error) => void;
+  const reader = new JsonlReader(handleEvent);
+
   return await new Promise<{ hadOutput: boolean }>((resolve, reject) => {
+    resolvePromise = resolve;
+    rejectPromise = reject;
     options.token.onCancellationRequested(() => {
       try {
         sendCommand({ type: "abort" });
@@ -112,43 +141,7 @@ async function runPiRpcPrompt(options: {
     });
 
     child.stdout.on("data", (chunk) => {
-      flushLines(chunk, (line) => {
-        let event: Record<string, unknown>;
-        try {
-          event = JSON.parse(line) as Record<string, unknown>;
-        } catch {
-          return;
-        }
-        if (event.type === "extension_ui_request") {
-          const method = typeof event.method === "string" ? event.method : undefined;
-          const id = typeof event.id === "string" ? event.id : undefined;
-          if (id && ["select", "confirm", "input", "editor"].includes(method ?? "")) {
-            sendCommand({ type: "extension_ui_response", id, cancelled: true });
-          }
-          return;
-        }
-        if (event.type === "message_update") {
-          const assistantMessageEvent = event.assistantMessageEvent as
-            | Record<string, unknown>
-            | undefined;
-          if (
-            assistantMessageEvent?.type === "text_delta" &&
-            typeof assistantMessageEvent.delta === "string"
-          ) {
-            hadOutput = true;
-            options.stream.markdown(assistantMessageEvent.delta);
-          }
-          return;
-        }
-        if (event.type === "response" && event.command === "prompt" && event.success === false) {
-          finish(resolve, reject, new Error(String(event.error ?? "Pi RPC prompt failed")));
-          child.kill();
-          return;
-        }
-        if (event.type === "agent_end") {
-          child.stdin.end();
-        }
-      });
+      reader.push(chunk);
     });
 
     child.stderr.on("data", (chunk: Buffer) => {
@@ -160,7 +153,7 @@ async function runPiRpcPrompt(options: {
     });
 
     child.on("close", (code, signal) => {
-      stdoutBuffer += decoder.end();
+      reader.end();
       if (resolved) return;
       if (options.token.isCancellationRequested) {
         finish(resolve, reject, new Error("Pi RPC request cancelled."));
@@ -176,6 +169,25 @@ async function runPiRpcPrompt(options: {
 
     sendCommand({ id: "prompt-1", type: "prompt", message: options.message });
   });
+}
+
+function createRpcUiAdapter() {
+  return {
+    select: (title: string, items: string[]) =>
+      vscode.window.showQuickPick(items, { title, placeHolder: title }),
+    async confirm(title: string, message: string): Promise<boolean | undefined> {
+      const result = await vscode.window.showWarningMessage(
+        message || title,
+        { modal: true, detail: message ? title : undefined },
+        "Confirm",
+        "Cancel",
+      );
+      if (result === undefined) return undefined;
+      return result === "Confirm";
+    },
+    input: (title: string, placeHolder?: string) =>
+      vscode.window.showInputBox({ title, placeHolder }),
+  };
 }
 
 function escapeMarkdownInline(text: string): string {
