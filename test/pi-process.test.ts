@@ -154,7 +154,9 @@ describe.runIf(process.platform === "win32")("Windows Pi process integration", (
       env: { ...process.env, PI_PROCESS_OUTPUT: outputPath },
       encoding: "utf8",
       stdio: "ignore",
-      timeout: 10_000,
+      // Hosted Windows runners can spend more than 10 seconds starting the
+      // nested PowerShell -> cmd -> Node process chain on a cold machine.
+      timeout: 30_000,
     });
 
     expect(result.error).toBeUndefined();
