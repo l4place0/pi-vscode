@@ -70,6 +70,13 @@
 
 ## 遗留问题
 
+- 2026-09-03 Windows 日常 profile 手工点击发现回归：扩展成功激活，但
+  `Pi Fork: Open` 创建的终端立即关闭。`ptyhost.log` 记录 `.cmd` 参数包含双层
+  `^^^"` 转义；同一命令在 Node `windowsVerbatimArguments: true` 下成功，在 VS Code
+  Terminal 使用的普通参数序列化下以 code 1 退出。根因是
+  `createPiTerminalLaunch()` 复用了只适用于 `spawnPi()` 的 ComSpec 转义，却无法把
+  `windowsVerbatimArguments` 传给 `TerminalOptions`。因此此前 VSIX 安装/激活验收有效，
+  但不能证明 Windows 交互终端可启动；该项已重新打开，等待修复和重新打包验收。
 - 需要把当前提交推送到远端后观察 Windows/macOS/Linux CI、固定 VS Code 1.110 Extension Host job 和 VSIX artifact job；本任务未执行 push。
 - macOS/Linux F5 与手工功能验收尚未执行。
 - Windows 尚未手工点击 F5 验证 UI、multi-root Explorer 行为、真实 `@pi-fork` text delta 和 Packages install/remove；自动化、Extension Host 和 smoke 已覆盖底层路径。

@@ -24,6 +24,11 @@
 
 Windows CI 运行临时 `.cmd` fixture，证明测试不只验证字符串规划。
 
+Windows terminal launch 还必须使用 `createPiTerminalLaunch()` 返回的
+`shellPath`/`shellArgs`，按 VS Code Terminal/Node PTY 的普通参数序列化方式启动真实
+`.cmd` fixture。该路径不能依赖 `windowsVerbatimArguments`，因为 VS Code
+`TerminalOptions` 不提供这个选项。
+
 ### RPC
 
 - UTF-8 字符跨 chunk。
@@ -112,7 +117,7 @@ Windows、macOS、Linux 各执行一次：
 1. `pnpm install && pnpm test && pnpm build`。
 2. F5 打开 Extension Development Host。
 3. 状态栏出现 fork 标识。
-4. `Pi: Open` 正常启动。
+4. `Pi Fork: Open` 正常启动且终端保持运行；Windows npm/Scoop `.cmd` shim 不得闪退。
 5. multi-root active editor 在 repo B 时 cwd 为 repo B。
 6. Explorer 右键 repo B 文件时路径和 cwd 正确。
 7. `@pi` 能流式输出。
