@@ -1,5 +1,5 @@
 import { spawnSync } from "node:child_process";
-import { mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
+import { mkdtemp, readFile, realpath, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
@@ -161,7 +161,7 @@ describe.runIf(process.platform === "win32")("Windows Pi process integration", (
     expect(result.status).toBe(0);
     expect(JSON.parse(await readFile(outputPath, "utf8"))).toEqual({
       args: args.map((argument) => argument.replace(/\r\n|[\r\n]/g, " ")),
-      cwd: directory,
+      cwd: await realpath(directory),
     });
   });
 });
