@@ -62,8 +62,8 @@
 - `pnpm typecheck`：通过。
 - `pnpm test:unit`：通过，6 files / 55 tests；Windows 真实 `.cmd` fixture 覆盖 cwd/env、空格、引号、换行及 `& | < > ^ % !`，并按 VS Code Terminal 的普通参数序列化方式执行 launcher。
 - `pnpm build`：通过，生成 `dist/extension.cjs`。
-- `pnpm test:pi -- 0.84.4`：通过；版本、关键 flags、offline RPC `get_state`、bundled bridge `getStatus` 和无 `extension_error` 均通过。
-- `pnpm test:pi -- latest`：通过；2026-09-02 registry latest 仍解析为 0.84.4。
+- `pnpm test:pi 0.84.4`：通过；版本、关键 flags、offline RPC `get_state`、bundled bridge `getStatus` 和无 `extension_error` 均通过。
+- `pnpm test:pi latest`：通过；2026-09-02 registry latest 仍解析为 0.84.4。
 - Extension Host：本机 VS Code 1.136.0 通过，扩展激活以及 fork commands/profile/view 注册成功；Windows 专项实际执行 `pi-vscode-fork.open`，终端在 2 秒观察窗内保持运行，之后由测试主动关闭，Extension Host 退出码 0。固定 VS Code 1.110 下载再次长时间无进展后中止；Ubuntu CI 仍固定该版本。
 - `pnpm package`：通过，重新生成 `pi-vscode-fork-0.1.0.vsix`，12 files，约 34.68 KB。
 - `node scripts/verify-vsix.mjs pi-vscode-fork-0.1.0.vsix`：通过，7 类必需 artifact 齐全。

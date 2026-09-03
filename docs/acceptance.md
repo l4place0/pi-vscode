@@ -18,7 +18,7 @@ pnpm acceptance
 | --------------- | ------------------------------ | ---------------------------------------------------- |
 | 静态与单元测试  | `pnpm test`                    | lint、format check、typecheck、Vitest                |
 | 构建            | `pnpm build`                   | extension bundle                                     |
-| Pi 兼容性       | `pnpm test:pi -- 0.84.4`       | CLI、offline RPC、bundled bridge、loopback request   |
+| Pi 兼容性       | `pnpm test:pi 0.84.4`          | CLI、offline RPC、bundled bridge、loopback request   |
 | Extension Host  | `pnpm test:integration`        | 激活、commands、contributions、bridge 生命周期       |
 | VSIX            | `pnpm package`                 | 本地可安装制品                                       |
 | VSIX 内容       | `node scripts/verify-vsix.mjs` | manifest、bundle、bridge、assets、README、license    |

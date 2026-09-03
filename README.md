@@ -128,7 +128,7 @@ Run `pnpm dev` in a separate terminal when continuous rebuilding is useful.
 Additional acceptance commands:
 
 ```bash
-pnpm test:pi -- 0.84.4
+pnpm test:pi 0.84.4
 pnpm test:integration
 pnpm package
 node scripts/verify-vsix.mjs pi-vscode-fork-0.1.0.vsix
