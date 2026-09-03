@@ -1,5 +1,5 @@
 import { spawnSync } from "node:child_process";
-import { mkdtemp, rm, writeFile } from "node:fs/promises";
+import { mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
@@ -121,9 +121,10 @@ describe.runIf(process.platform === "win32")("Windows Pi process integration", (
     temporaryDirectories.push(directory);
     const scriptPath = join(directory, "echo-args.cjs");
     const commandPath = join(directory, "pi.cmd");
+    const outputPath = join(directory, "result.json");
     await writeFile(
       scriptPath,
-      "process.stdout.write(JSON.stringify({ args: process.argv.slice(2), cwd: process.cwd() }));\n",
+      "require('node:fs').writeFileSync(process.env.PI_PROCESS_OUTPUT, JSON.stringify({ args: process.argv.slice(2), cwd: process.cwd() }));\n",
       "utf8",
     );
     await writeFile(
@@ -150,14 +151,15 @@ describe.runIf(process.platform === "win32")("Windows Pi process integration", (
     expect(launch.shellPath.toLowerCase()).toContain("powershell");
     const result = spawnSync(launch.shellPath, launch.shellArgs, {
       cwd: directory,
-      env: process.env,
+      env: { ...process.env, PI_PROCESS_OUTPUT: outputPath },
       encoding: "utf8",
+      stdio: "ignore",
       timeout: 10_000,
     });
 
     expect(result.error).toBeUndefined();
-    expect(result.status, result.stderr).toBe(0);
-    expect(JSON.parse(result.stdout)).toEqual({
+    expect(result.status).toBe(0);
+    expect(JSON.parse(await readFile(outputPath, "utf8"))).toEqual({
       args: args.map((argument) => argument.replace(/\r\n|[\r\n]/g, " ")),
       cwd: directory,
     });
