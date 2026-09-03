@@ -64,6 +64,9 @@
 - `626d096` `test: avoid nested Windows pipe deadlock`：让 terminal fixture 使用接近 PTY 的无管道验证方式。
 - `8002a39` `test: normalize Windows terminal cwd`：兼容 Windows 8.3 短路径与规范长路径。
 - `f58305f` `test: exercise multi-root terminal contexts`：在真实 Extension Host 中验证 active editor、Explorer 文件和目录的实际 Pi cwd/context。
+- `c8c53d8` `docs: record multi-root integration coverage`：把新增 multi-root 自动验收和剩余视觉检查写入档案。
+- `2052011` `test: tolerate slow Windows process startup`：放宽 Windows terminal fixture 的子进程硬超时。
+- `e054724` `test: extend Windows integration timeout`：为真实 Windows terminal 集成用例设置独立的 Vitest 30 秒预算。
 
 ## 验证结果
 
@@ -81,7 +84,7 @@
 - `pnpm test:vsix -- .\pi-vscode-fork-0.1.0.vsix`：本机 VS Code 1.136.0 通过；隔离 profile 中安装、激活、Pi fixture terminal 2 秒存活、卸载和临时目录清理均成功。
 - `pnpm acceptance`：使用本机 VS Code 1.136.0 完整通过；串联 lint、format check、typecheck、55 个单测、build、Pi 0.84.4 smoke、Extension Host、VSIX package/content verification 和隔离 VSIX smoke。
 - 扩展后的 `pnpm test:integration`：本机 VS Code 1.136.0 通过；临时 multi-root workspace 中，从 workspace B active editor、workspace A Explorer 文件和 workspace B Explorer 目录启动的三个真实 Pi fixture 进程均收到正确 cwd 与上下文，首个终端在 2 秒观察窗内保持运行。
-- GitHub CI：[run 33712627565](https://github.com/l4place0/pi-vscode/actions/runs/33712627565) 全部通过；Windows/macOS/Linux checks 均完成 lint、typecheck、55 个测试、build 和 Pi 0.84.4 smoke，Pi latest、Ubuntu Extension Host、隔离 VSIX smoke、VSIX 内容验证与 artifact 均通过。
+- GitHub CI：[run 33725575346](https://github.com/l4place0/pi-vscode/actions/runs/33725575346) 全部通过；Windows/macOS/Linux checks 均完成 lint、typecheck、55 个测试、build 和 Pi 0.84.4 smoke，Pi latest、Ubuntu multi-root Extension Host、隔离 VSIX smoke、VSIX 内容验证与 artifact 均通过。
 - Windows 真实 Pi 手工 smoke：用户确认修复后的日常 profile 可以正常启动 Pi TUI，原“一闪即关”回归关闭。
 - 本机工具事实：Node 24.20.0、pnpm 10.32.1、VS Code 1.136.0；CI 固定 Node 22、pnpm 10.32.1、VS Code 1.110。
 
@@ -96,6 +99,7 @@
 - 本地 Extension Host 最终使用现有 VS Code 1.136.0；固定 1.110 的本地下载因网络中止未完成，Ubuntu CI 已使用固定 1.110 通过。
 - fork 的 push 事件在本次验收中没有自动创建 workflow run；增加 `workflow_dispatch` 后使用当前 `gh` 身份手动触发。CI 配置本身和所有 job 已验证，push 自动触发仍需后续观察 GitHub fork 行为。
 - Windows runner 将 `tmpdir()` 返回为 8.3 短路径，但子进程 cwd 报告规范长路径；测试改为比较 `realpath`，产品 cwd 不受影响。
+- Windows 托管 runner 的真实 PowerShell → cmd → Node terminal fixture 偶尔超过 Vitest 默认 5 秒预算；子进程及用例均显式设置 30 秒上限，仍要求进程正常退出、状态为 0 且参数/cwd 完整匹配，不使用 retry 或跳过。
 - 没有实现 `.pi/APPEND_SYSTEM.md` discovery，没有删除 Packages sidebar，也没有增加 Marketplace/Open VSX 发布。
 
 ## 遗留问题
