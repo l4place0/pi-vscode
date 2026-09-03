@@ -12,6 +12,10 @@
 - 新增统一 workspace/cwd resolution，按 Explorer resource、active editor、首个 workspace 的顺序解析；session state 升级为保存 cwd 的 v1 结构并兼容旧 map。
 - Explorer 文件和目录上下文已使用传入的 `resourceUri`；未打开文件不再伪造 selection。
 - 新增跨平台 Pi process abstraction：Unix 与 `.exe` 直接执行，`.cmd/.bat` 显式使用 ComSpec 和转义，`.ps1` 显式使用 PowerShell；Terminal、RPC 和 Packages 共用该策略。
+- Windows VS Code Terminal 的 `.cmd/.bat` 路径不再直接复用 Node
+  `windowsVerbatimArguments` 调用；改由 Base64 编码的 PowerShell bootstrap 通过 .NET
+  `ProcessStartInfo` 传入已转义的原始 ComSpec 参数。多行 prompt 在仅限该路径中压平为空格，
+  避免 `cmd` 把换行解释为命令边界。
 - Pi upgrade 已改为结构化参数并顺序执行 package manager 与 `pi update`，不再依赖默认终端的 `&&` 或 shell path quoting。
 - RPC JSONL parser 兼容 UTF-8 跨 chunk、LF/CRLF 和 malformed line；select/confirm/input 使用 VS Code 原生 UI，editor 明确取消，extension error 可诊断。
 - RPC 在 `agent_settled` 后结束，并通过 1 秒 grace 兼容旧 Pi 的 `agent_end`；`willRetry: true` 不提前关闭，Chat cancellation 不再打开 fallback terminal。
@@ -43,26 +47,31 @@
 - `2257ed0` `docs: document fork development and local release workflow`：本结果档案与最终使用说明。
 - `ba16b92` `fix: run Pi upgrades without shell pipelines`：让跨平台升级也使用结构化 process abstraction。
 - `docs: record final upgrade verification`：记录最终升级执行与验收事实。
+- `a546a85` `docs: record Windows terminal launch regression`：记录真实 VSIX 点击闪退、根因和新增验收门禁。
+- `df4c20f` `fix: launch Windows cmd shims from VS Code terminals`：增加 Terminal 专用 Windows launcher 和真实 `.cmd` 回归测试。
+- `e77b029` `test: exercise Windows Pi terminal lifetime`：在 Windows Extension Host 中实际调用 open command 并检查终端不会立即退出。
 
 ## 验证结果
 
 - `pnpm fmt`：通过，0 warnings / 0 errors。
 - `pnpm typecheck`：通过。
-- `pnpm test:unit`：通过，6 files / 54 tests；Windows 真实 `.cmd` fixture 覆盖 cwd/env、空格、引号及 `& | < > ^ % !`。
+- `pnpm test:unit`：通过，6 files / 55 tests；Windows 真实 `.cmd` fixture 覆盖 cwd/env、空格、引号、换行及 `& | < > ^ % !`，并按 VS Code Terminal 的普通参数序列化方式执行 launcher。
 - `pnpm build`：通过，生成 `dist/extension.cjs`。
 - `pnpm test:pi -- 0.84.4`：通过；版本、关键 flags、offline RPC `get_state`、bundled bridge `getStatus` 和无 `extension_error` 均通过。
 - `pnpm test:pi -- latest`：通过；2026-09-02 registry latest 仍解析为 0.84.4。
-- Extension Host：本机 VS Code 1.135.0 通过，扩展激活以及 fork commands/profile/view 注册成功，退出码 0。固定 VS Code 1.110 下载两次被远端中止；Ubuntu CI 仍固定该版本。
-- `pnpm package`：通过，生成 `pi-vscode-fork-0.1.0.vsix`，12 files，约 34.31 KB。
+- Extension Host：本机 VS Code 1.136.0 通过，扩展激活以及 fork commands/profile/view 注册成功；Windows 专项实际执行 `pi-vscode-fork.open`，终端在 2 秒观察窗内保持运行，之后由测试主动关闭，Extension Host 退出码 0。固定 VS Code 1.110 下载再次长时间无进展后中止；Ubuntu CI 仍固定该版本。
+- `pnpm package`：通过，重新生成 `pi-vscode-fork-0.1.0.vsix`，12 files，约 34.68 KB。
 - `node scripts/verify-vsix.mjs pi-vscode-fork-0.1.0.vsix`：通过，7 类必需 artifact 齐全。
 - 干净 profile：0.1.0 VSIX 安装、`pi0.pi-vscode-fork@0.1.0` 列出和卸载均成功；临时 profile 已移入 Windows 回收站。
-- 本机工具事实：Node 24.20.0、pnpm 10.32.1、VS Code 1.135.0；CI 固定 Node 22、pnpm 10.32.1、VS Code 1.110。
+- 日常 profile：修复后的 VSIX 已使用 `--force` 覆盖安装，`code --list-extensions --show-versions` 返回 `pi0.pi-vscode-fork@0.1.0`；仍需用户重载日常窗口后手工点击确认视觉/TUI 行为。
+- 本机工具事实：Node 24.20.0、pnpm 10.32.1、VS Code 1.136.0；CI 固定 Node 22、pnpm 10.32.1、VS Code 1.110。
 
 ## 与原计划的差异
 
 - manifest 从 0.0.9 更新为 0.1.0；计划未单列版本 bump，但档案目标和最终 VSIX 需要一致版本。
 - 为提高可测性，workspace、session、open context 和 Packages 校验分别增加纯 helper 模块，没有引入 Pi SDK 或 UI framework。
 - `.cmd` 使用成熟的双层 cmd metachar escaping，以兼容 npm/pnpm shim 的 `%*` 二次解析。
+- VS Code `TerminalOptions` 无法设置 `windowsVerbatimArguments`。Windows Terminal 因此增加一层编码 bootstrap，并只在 `.cmd/.bat` terminal 参数中把 CR/LF 改为空格；后台 RPC、Packages、smoke 与 upgrade 的参数语义不变。
 - VSCE 将根目录 `LICENSE` 和 `README.md` 规范化打包为 `extension/LICENSE.txt` 与 `extension/readme.md`；验证器按大小写无关及 license 两种合法名称验收。
 - 本机是 Node 24.20.0，而既定开发/CI 基线仍固定 Node 22；本机所有检查通过，三平台 CI 将验证 Node 22。
 - 本地 Extension Host 最终使用现有 VS Code 1.135.0；固定 1.110 的下载因网络中止未完成，本版本 CI 仍固定 1.110。
@@ -70,16 +79,9 @@
 
 ## 遗留问题
 
-- 2026-09-03 Windows 日常 profile 手工点击发现回归：扩展成功激活，但
-  `Pi Fork: Open` 创建的终端立即关闭。`ptyhost.log` 记录 `.cmd` 参数包含双层
-  `^^^"` 转义；同一命令在 Node `windowsVerbatimArguments: true` 下成功，在 VS Code
-  Terminal 使用的普通参数序列化下以 code 1 退出。根因是
-  `createPiTerminalLaunch()` 复用了只适用于 `spawnPi()` 的 ComSpec 转义，却无法把
-  `windowsVerbatimArguments` 传给 `TerminalOptions`。因此此前 VSIX 安装/激活验收有效，
-  但不能证明 Windows 交互终端可启动；该项已重新打开，等待修复和重新打包验收。
 - 需要把当前提交推送到远端后观察 Windows/macOS/Linux CI、固定 VS Code 1.110 Extension Host job 和 VSIX artifact job；本任务未执行 push。
 - macOS/Linux F5 与手工功能验收尚未执行。
-- Windows 尚未手工点击 F5 验证 UI、multi-root Explorer 行为、真实 `@pi-fork` text delta 和 Packages install/remove；自动化、Extension Host 和 smoke 已覆盖底层路径。
+- Windows 日常 profile 尚待用户重载窗口后手工点击确认 Pi TUI；Extension Host 已实际执行相同 open command 并证明终端不会立即退出。F5 UI、multi-root Explorer 行为、真实 `@pi-fork` text delta 和 Packages install/remove 仍待手工验证。
 - 官方扩展与 fork 同时安装的完整 A/B 手工流程尚未执行；所有已知全局 contribution/storage IDs 已隔离并有 manifest 测试。
 - Packages registry browser 的 250 次 metadata fan-out 仍保留，后续版本可独立评估产品和性能取舍。
 
