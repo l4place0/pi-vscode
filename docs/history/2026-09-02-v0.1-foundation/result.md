@@ -1,6 +1,6 @@
 # 实施结果
 
-- 状态：实施完成，跨平台外部验收待运行
+- 状态：实施与自动验收完成，完整手工矩阵待运行
 - 实施日期：2026-09-02
 - 最终版本：0.1.0
 - 档案状态：`in-progress`
@@ -49,12 +49,20 @@
 - `8e9ef97` `fix: keep generated test profiles out of checks`：隔离本地 Extension Host/VSIX 临时目录。
 - `2257ed0` `docs: document fork development and local release workflow`：本结果档案与最终使用说明。
 - `ba16b92` `fix: run Pi upgrades without shell pipelines`：让跨平台升级也使用结构化 process abstraction。
-- `docs: record final upgrade verification`：记录最终升级执行与验收事实。
+- `96838ca` `docs: record final upgrade verification`：记录最终升级执行与验收事实。
 - `a546a85` `docs: record Windows terminal launch regression`：记录真实 VSIX 点击闪退、根因和新增验收门禁。
 - `df4c20f` `fix: launch Windows cmd shims from VS Code terminals`：增加 Terminal 专用 Windows launcher 和真实 `.cmd` 回归测试。
 - `e77b029` `test: exercise Windows Pi terminal lifetime`：在 Windows Extension Host 中实际调用 open command 并检查终端不会立即退出。
 - `e26014a` `test: automate isolated VSIX acceptance`：自动化干净 profile VSIX smoke，接入 CI 并持久化完整验收流程。
+- `22cf7d4` `docs: record automated VSIX acceptance`：记录自动化干净 profile 验收结果。
 - `48362b6` `fix: pass Pi version through acceptance script`：修正组合 script 中 pnpm 参数透传，确保完整门禁可一次执行。
+- `ed0742e` `docs: record full local acceptance run`：记录本地完整 acceptance 结果。
+- `02fb7f5` `ci: allow manual workflow runs`：为 fork 增加可重复的手动 CI 触发入口。
+- `cc0b931` `fix: resolve Windows shims with Windows paths`：让跨宿主 Windows path 测试使用 Windows 语义。
+- `725fd11` `fix: make Pi smoke portable across runners`：跨平台定位 npm CLI 并统一 Pi smoke 参数。
+- `3d53e1c` `docs: standardize Pi smoke commands`：同步文档中的跨平台 smoke 命令。
+- `626d096` `test: avoid nested Windows pipe deadlock`：让 terminal fixture 使用接近 PTY 的无管道验证方式。
+- `8002a39` `test: normalize Windows terminal cwd`：兼容 Windows 8.3 短路径与规范长路径。
 
 ## 验证结果
 
@@ -65,12 +73,13 @@
 - `pnpm test:pi 0.84.4`：通过；版本、关键 flags、offline RPC `get_state`、bundled bridge `getStatus` 和无 `extension_error` 均通过。
 - `pnpm test:pi latest`：通过；2026-09-02 registry latest 仍解析为 0.84.4。
 - Extension Host：本机 VS Code 1.136.0 通过，扩展激活以及 fork commands/profile/view 注册成功；Windows 专项实际执行 `pi-vscode-fork.open`，终端在 2 秒观察窗内保持运行，之后由测试主动关闭，Extension Host 退出码 0。固定 VS Code 1.110 下载再次长时间无进展后中止；Ubuntu CI 仍固定该版本。
-- `pnpm package`：通过，重新生成 `pi-vscode-fork-0.1.0.vsix`，12 files，约 34.68 KB。
+- `pnpm package`：通过，重新生成 `pi-vscode-fork-0.1.0.vsix`，12 files，约 34.84 KB。
 - `node scripts/verify-vsix.mjs pi-vscode-fork-0.1.0.vsix`：通过，7 类必需 artifact 齐全。
 - 干净 profile：0.1.0 VSIX 安装、`pi0.pi-vscode-fork@0.1.0` 列出和卸载均成功；临时 profile 已移入 Windows 回收站。
 - 日常 profile：修复后的 VSIX 已使用 `--force` 覆盖安装，`code --list-extensions --show-versions` 返回 `pi0.pi-vscode-fork@0.1.0`。
 - `pnpm test:vsix -- .\pi-vscode-fork-0.1.0.vsix`：本机 VS Code 1.136.0 通过；隔离 profile 中安装、激活、Pi fixture terminal 2 秒存活、卸载和临时目录清理均成功。
 - `pnpm acceptance`：使用本机 VS Code 1.136.0 完整通过；串联 lint、format check、typecheck、55 个单测、build、Pi 0.84.4 smoke、Extension Host、VSIX package/content verification 和隔离 VSIX smoke。
+- GitHub CI：[run 33712627565](https://github.com/l4place0/pi-vscode/actions/runs/33712627565) 全部通过；Windows/macOS/Linux checks 均完成 lint、typecheck、55 个测试、build 和 Pi 0.84.4 smoke，Pi latest、Ubuntu Extension Host、隔离 VSIX smoke、VSIX 内容验证与 artifact 均通过。
 - Windows 真实 Pi 手工 smoke：用户确认修复后的日常 profile 可以正常启动 Pi TUI，原“一闪即关”回归关闭。
 - 本机工具事实：Node 24.20.0、pnpm 10.32.1、VS Code 1.136.0；CI 固定 Node 22、pnpm 10.32.1、VS Code 1.110。
 
@@ -82,16 +91,18 @@
 - VS Code `TerminalOptions` 无法设置 `windowsVerbatimArguments`。Windows Terminal 因此增加一层编码 bootstrap，并只在 `.cmd/.bat` terminal 参数中把 CR/LF 改为空格；后台 RPC、Packages、smoke 与 upgrade 的参数语义不变。
 - VSCE 将根目录 `LICENSE` 和 `README.md` 规范化打包为 `extension/LICENSE.txt` 与 `extension/readme.md`；验证器按大小写无关及 license 两种合法名称验收。
 - 本机是 Node 24.20.0，而既定开发/CI 基线仍固定 Node 22；本机所有检查通过，三平台 CI 将验证 Node 22。
-- 本地 Extension Host 最终使用现有 VS Code 1.135.0；固定 1.110 的下载因网络中止未完成，本版本 CI 仍固定 1.110。
+- 本地 Extension Host 最终使用现有 VS Code 1.136.0；固定 1.110 的本地下载因网络中止未完成，Ubuntu CI 已使用固定 1.110 通过。
+- fork 的 push 事件在本次验收中没有自动创建 workflow run；增加 `workflow_dispatch` 后使用当前 `gh` 身份手动触发。CI 配置本身和所有 job 已验证，push 自动触发仍需后续观察 GitHub fork 行为。
+- Windows runner 将 `tmpdir()` 返回为 8.3 短路径，但子进程 cwd 报告规范长路径；测试改为比较 `realpath`，产品 cwd 不受影响。
 - 没有实现 `.pi/APPEND_SYSTEM.md` discovery，没有删除 Packages sidebar，也没有增加 Marketplace/Open VSX 发布。
 
 ## 遗留问题
 
-- 需要把当前提交推送到远端后观察 Windows/macOS/Linux CI、固定 VS Code 1.110 Extension Host job 和 VSIX artifact job；本任务未执行 push。
 - macOS/Linux F5 与手工功能验收尚未执行。
 - Windows 真实 Pi TUI 启动已手工通过。F5 UI、multi-root Explorer 行为、session restore、真实 `@pi-fork` text delta/native UI、Packages install/remove 和官方扩展 A/B 仍待手工验证。
 - 官方扩展与 fork 同时安装的完整 A/B 手工流程尚未执行；所有已知全局 contribution/storage IDs 已隔离并有 manifest 测试。
 - Packages registry browser 的 250 次 metadata fan-out 仍保留，后续版本可独立评估产品和性能取舍。
+- GitHub Actions 提示 `pnpm/action-setup@v4` 与 `actions/upload-artifact@v4` 的 Node 20 action runtime 已被 runner 强制切换到 Node 24；当前不影响通过结果，后续应在上游 action 发布兼容版本后升级。
 
 ## 回滚方式
 

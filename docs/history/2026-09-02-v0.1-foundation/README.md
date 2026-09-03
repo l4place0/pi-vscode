@@ -63,4 +63,6 @@
 - [x] 完成开发工作流和 CI 配置。
 - [x] 完成本地 VSIX 验收。
 
-远端三平台 CI 和 macOS/Linux 手工验收尚未实际执行，因此档案继续保持 `in-progress`。
+远端 Windows/macOS/Linux CI 已通过。F5、multi-root、session restore、真实 Chat/Packages、
+官方扩展 A/B 以及 macOS/Linux 真实 TUI 的完整手工矩阵尚未全部执行，因此档案继续保持
+`in-progress`。
