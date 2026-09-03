@@ -154,8 +154,8 @@ describe.runIf(process.platform === "win32")("Windows Pi process integration", (
       env: { ...process.env, PI_PROCESS_OUTPUT: outputPath },
       encoding: "utf8",
       stdio: "ignore",
-      // Hosted Windows runners can spend more than 10 seconds starting the
-      // nested PowerShell -> cmd -> Node process chain on a cold machine.
+      // Hosted Windows runners can be slow to start the nested
+      // PowerShell -> cmd -> Node process chain on a cold machine.
       timeout: 30_000,
     });
 
@@ -165,7 +165,7 @@ describe.runIf(process.platform === "win32")("Windows Pi process integration", (
       args: args.map((argument) => argument.replace(/\r\n|[\r\n]/g, " ")),
       cwd: await realpath(directory),
     });
-  });
+  }, 30_000);
 });
 
 describe("execPi", () => {
