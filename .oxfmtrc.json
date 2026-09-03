@@ -1,4 +1,15 @@
 {
   "$schema": "https://unpkg.com/oxfmt/configuration_schema.json",
-  "ignorePatterns": [".vscode-test/**", ".tmp/**"]
+  "ignorePatterns": [
+    ".vscode-test/**",
+    ".tmp/**",
+    "docs/history/2026-09-03-bridge-response-protocol/experiment-results-v0.json",
+    "docs/history/2026-09-03-bridge-response-protocol/experiment-results-v0.1.json",
+    "docs/history/2026-09-03-bridge-response-protocol/full-parameter-results-v1.json",
+    "docs/history/2026-09-03-bridge-response-protocol/full-parameter-result-v1.md",
+    "docs/history/2026-09-03-bridge-response-protocol/ablation-results-v1.json",
+    "docs/history/2026-09-03-bridge-response-protocol/ablation-result-v1.md",
+    "docs/history/2026-09-03-bridge-response-protocol/result.md",
+    "docs/history/2026-09-03-bridge-response-protocol/result-v0.1.md"
+  ]
 }

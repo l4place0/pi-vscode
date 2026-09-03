@@ -1,0 +1,1264 @@
+{
+  "schemaVersion": 1,
+  "experiment": "bridge-full-parameter-sensitivity-v1",
+  "method": "deterministic canonical replay with one-factor-at-a-time sweeps",
+  "tunedParameterFamilies": [
+    "defaultDetail",
+    "diagnostics.scope",
+    "diagnostics.severity",
+    "diagnostics.limit",
+    "references.limit",
+    "workspaceSymbols.limit",
+    "maxOutputBytes",
+    "snapshot.ttlSeconds",
+    "snapshot.maxSnapshots",
+    "snapshot.maxItems",
+    "editorState.detail",
+    "editTextThresholdBytes",
+    "notifications.detail",
+    "notifications.limit",
+    "notifications.ringCapacity",
+    "notifications.coalesce"
+  ],
+  "invariantParameterFamilies": [
+    "diagnostics.uris",
+    "pagination.cursor",
+    "notifications.afterCursor",
+    "notifications.start",
+    "notifications.types",
+    "edit.includeEditText",
+    "responseVersion"
+  ],
+  "fixtureSummary": {
+    "diagnostics": 2000,
+    "workspaceSymbols": 5000,
+    "references": 10000,
+    "notifications": 10000,
+    "editorScales": [
+      1,
+      10,
+      50
+    ],
+    "editTextSizesKiB": [
+      1,
+      4,
+      8,
+      16,
+      24,
+      32,
+      40
+    ]
+  },
+  "sweepRowCount": 114,
+  "correctnessGatePassed": true,
+  "recommendations": {
+    "defaultDetail": "compact",
+    "diagnostics": {
+      "scope": "active",
+      "severity": [
+        "error",
+        "warning"
+      ],
+      "limit": 100,
+      "evidence": {
+        "family": "pagination",
+        "domain": "diagnostics",
+        "sweep": "limit",
+        "detail": "compact",
+        "limit": 100,
+        "byteBudget": 32768,
+        "pageCount": 20,
+        "maxPageBytes": 23762,
+        "firstPageItems": 100,
+        "byteBudgetPages": 0,
+        "gatePassed": true
+      }
+    },
+    "references": {
+      "limit": 75,
+      "evidence": {
+        "family": "pagination",
+        "domain": "references",
+        "sweep": "limit",
+        "limit": 75,
+        "byteBudget": 32768,
+        "pageCount": 134,
+        "maxPageBytes": 16838,
+        "gatePassed": true
+      }
+    },
+    "workspaceSymbols": {
+      "limit": 200,
+      "evidence": {
+        "family": "pagination",
+        "domain": "workspaceSymbols",
+        "sweep": "limit",
+        "detail": "compact",
+        "limit": 200,
+        "byteBudget": 32768,
+        "pageCount": 25,
+        "maxPageBytes": 31087,
+        "firstPageItems": 200,
+        "byteBudgetPages": 0,
+        "gatePassed": true
+      }
+    },
+    "output": {
+      "defaultBytes": 32768,
+      "allowedMaximumBytes": 40960,
+      "hardLimitBytes": 51200
+    },
+    "snapshot": {
+      "ttlSeconds": 120,
+      "maxSnapshots": 16,
+      "maxItems": 50000,
+      "evidence": {
+        "ttl": {
+          "family": "snapshot.ttlSeconds",
+          "candidate": 120,
+          "expiredReads": 5,
+          "expiryRate": 0.05,
+          "retainedSeconds": 2650,
+          "gatePassed": true
+        },
+        "snapshots": {
+          "family": "snapshot.maxSnapshots",
+          "candidate": 16,
+          "overflowEvents": 2,
+          "overflowUnits": 16,
+          "estimatedMetadataKiB": 32,
+          "gatePassed": true
+        },
+        "items": {
+          "family": "snapshot.maxItems",
+          "candidate": 50000,
+          "overflowEvents": 2,
+          "overflowItems": 60000,
+          "estimatedCanonicalMemoryMiB": 7.62939453125,
+          "gatePassed": true
+        }
+      }
+    },
+    "editorState": {
+      "defaultDetail": "compact"
+    },
+    "edits": {
+      "includeEditTextDefault": false,
+      "textThresholdBytes": 24576,
+      "largestAcceptedPayloadKiB": 24
+    },
+    "notifications": {
+      "start": "buffer",
+      "detail": "minimal",
+      "limit": 50,
+      "ringCapacity": 500,
+      "coalesce": true,
+      "evidence": {
+        "limit": {
+          "family": "notifications.limit",
+          "candidate": 50,
+          "pagesForCoalescedStream": 100,
+          "firstPageBytes": 3478,
+          "gatePassed": true
+        },
+        "ring": {
+          "family": "notifications.ringCapacity",
+          "candidate": 500,
+          "gapEvents": 5,
+          "gapRate": 0.05,
+          "estimatedFullPayloadKiB": 205.078125,
+          "gatePassed": true
+        },
+        "coalesce": {
+          "family": "notifications.coalesce",
+          "candidate": true,
+          "inputEvents": 10000,
+          "outputEvents": 5000,
+          "reductionRatio": 0.5,
+          "savedEventsPreserved": true,
+          "gatePassed": true
+        }
+      }
+    }
+  },
+  "invariantChecks": [
+    {
+      "family": "diagnostics.uris",
+      "assertion": "URI scope preserves requested URI order",
+      "passed": true
+    },
+    {
+      "family": "pagination.cursor",
+      "assertion": "cursor binds detail, method and query fingerprint",
+      "passed": true
+    },
+    {
+      "family": "notifications.afterCursor",
+      "assertion": "ring overflow produces an explicit gap",
+      "passed": true
+    },
+    {
+      "family": "notifications.start",
+      "assertion": "start=now establishes an empty baseline",
+      "passed": true
+    },
+    {
+      "family": "notifications.types",
+      "assertion": "type filtering preserves source order",
+      "passed": true
+    },
+    {
+      "family": "notifications.coalesce",
+      "assertion": "saved events are never removed",
+      "passed": true
+    },
+    {
+      "family": "edit.includeEditText",
+      "assertion": "includeEditText requires full detail",
+      "passed": true
+    },
+    {
+      "family": "responseVersion",
+      "assertion": "explicit v2 selects envelope while omitted version remains legacy",
+      "passed": true
+    }
+  ],
+  "sweeps": {
+    "detail": [
+      {
+        "family": "detail",
+        "domain": "diagnostics",
+        "detail": "minimal",
+        "bytes": 162,
+        "gatePassed": true
+      },
+      {
+        "family": "detail",
+        "domain": "workspaceSymbols",
+        "detail": "minimal",
+        "bytes": 162,
+        "gatePassed": true
+      },
+      {
+        "family": "detail",
+        "domain": "references",
+        "detail": "minimal",
+        "bytes": 199,
+        "visibleItems": 0,
+        "gatePassed": true
+      },
+      {
+        "family": "detail",
+        "domain": "notifications",
+        "detail": "minimal",
+        "bytes": 3487,
+        "gatePassed": true
+      },
+      {
+        "family": "detail",
+        "domain": "diagnostics",
+        "detail": "compact",
+        "bytes": 23515,
+        "gatePassed": true
+      },
+      {
+        "family": "detail",
+        "domain": "workspaceSymbols",
+        "detail": "compact",
+        "bytes": 30815,
+        "gatePassed": true
+      },
+      {
+        "family": "detail",
+        "domain": "references",
+        "detail": "compact",
+        "bytes": 16833,
+        "visibleItems": 75,
+        "gatePassed": true
+      },
+      {
+        "family": "detail",
+        "domain": "notifications",
+        "detail": "compact",
+        "bytes": 10756,
+        "gatePassed": true
+      },
+      {
+        "family": "detail",
+        "domain": "diagnostics",
+        "detail": "full",
+        "bytes": 45532,
+        "gatePassed": true
+      },
+      {
+        "family": "detail",
+        "domain": "workspaceSymbols",
+        "detail": "full",
+        "bytes": 48836,
+        "gatePassed": true
+      },
+      {
+        "family": "detail",
+        "domain": "references",
+        "detail": "full",
+        "bytes": 32425,
+        "visibleItems": 52,
+        "gatePassed": true
+      },
+      {
+        "family": "detail",
+        "domain": "notifications",
+        "detail": "full",
+        "bytes": 27011,
+        "gatePassed": true
+      }
+    ],
+    "diagnostics": [
+      {
+        "family": "diagnostics.scope",
+        "scope": "active",
+        "matched": 3,
+        "bytes": 730,
+        "gatePassed": true
+      },
+      {
+        "family": "diagnostics.scope",
+        "scope": "open",
+        "matched": 60,
+        "bytes": 14529,
+        "gatePassed": true
+      },
+      {
+        "family": "diagnostics.scope",
+        "scope": "workspace",
+        "matched": 1200,
+        "bytes": 24299,
+        "gatePassed": true
+      },
+      {
+        "family": "diagnostics.scope",
+        "scope": "uris",
+        "matched": 9,
+        "bytes": 2195,
+        "gatePassed": true
+      },
+      {
+        "family": "diagnostics.severity",
+        "severity": [
+          "error"
+        ],
+        "matched": 400,
+        "coverageRatio": 0.2,
+        "gatePassed": true
+      },
+      {
+        "family": "diagnostics.severity",
+        "severity": [
+          "error",
+          "warning"
+        ],
+        "matched": 1200,
+        "coverageRatio": 0.6,
+        "gatePassed": true
+      },
+      {
+        "family": "diagnostics.severity",
+        "severity": [
+          "error",
+          "warning",
+          "information"
+        ],
+        "matched": 1600,
+        "coverageRatio": 0.8,
+        "gatePassed": true
+      },
+      {
+        "family": "diagnostics.severity",
+        "severity": [
+          "error",
+          "warning",
+          "information",
+          "hint"
+        ],
+        "matched": 2000,
+        "coverageRatio": 1,
+        "gatePassed": true
+      }
+    ],
+    "pagination": [
+      {
+        "family": "pagination",
+        "domain": "diagnostics",
+        "sweep": "limit",
+        "detail": "compact",
+        "limit": 50,
+        "byteBudget": 32768,
+        "pageCount": 40,
+        "maxPageBytes": 11961,
+        "firstPageItems": 50,
+        "byteBudgetPages": 0,
+        "gatePassed": true
+      },
+      {
+        "family": "pagination",
+        "domain": "diagnostics",
+        "sweep": "limit",
+        "detail": "compact",
+        "limit": 100,
+        "byteBudget": 32768,
+        "pageCount": 20,
+        "maxPageBytes": 23762,
+        "firstPageItems": 100,
+        "byteBudgetPages": 0,
+        "gatePassed": true
+      },
+      {
+        "family": "pagination",
+        "domain": "diagnostics",
+        "sweep": "limit",
+        "detail": "compact",
+        "limit": 200,
+        "byteBudget": 32768,
+        "pageCount": 15,
+        "maxPageBytes": 32763,
+        "firstPageItems": 139,
+        "byteBudgetPages": 14,
+        "gatePassed": true
+      },
+      {
+        "family": "pagination",
+        "domain": "diagnostics",
+        "sweep": "byteBudget",
+        "detail": "compact",
+        "limit": 100,
+        "byteBudget": 24576,
+        "pageCount": 20,
+        "maxPageBytes": 23762,
+        "firstPageItems": 100,
+        "byteBudgetPages": 0,
+        "gatePassed": true
+      },
+      {
+        "family": "pagination",
+        "domain": "diagnostics",
+        "sweep": "byteBudget",
+        "detail": "compact",
+        "limit": 100,
+        "byteBudget": 32768,
+        "pageCount": 20,
+        "maxPageBytes": 23762,
+        "firstPageItems": 100,
+        "byteBudgetPages": 0,
+        "gatePassed": true
+      },
+      {
+        "family": "pagination",
+        "domain": "diagnostics",
+        "sweep": "byteBudget",
+        "detail": "compact",
+        "limit": 100,
+        "byteBudget": 40960,
+        "pageCount": 20,
+        "maxPageBytes": 23762,
+        "firstPageItems": 100,
+        "byteBudgetPages": 0,
+        "gatePassed": true
+      },
+      {
+        "family": "pagination",
+        "domain": "workspaceSymbols",
+        "sweep": "limit",
+        "detail": "compact",
+        "limit": 100,
+        "byteBudget": 32768,
+        "pageCount": 50,
+        "maxPageBytes": 15627,
+        "firstPageItems": 100,
+        "byteBudgetPages": 0,
+        "gatePassed": true
+      },
+      {
+        "family": "pagination",
+        "domain": "workspaceSymbols",
+        "sweep": "limit",
+        "detail": "compact",
+        "limit": 200,
+        "byteBudget": 32768,
+        "pageCount": 25,
+        "maxPageBytes": 31087,
+        "firstPageItems": 200,
+        "byteBudgetPages": 0,
+        "gatePassed": true
+      },
+      {
+        "family": "pagination",
+        "domain": "workspaceSymbols",
+        "sweep": "limit",
+        "detail": "compact",
+        "limit": 400,
+        "byteBudget": 32768,
+        "pageCount": 24,
+        "maxPageBytes": 32708,
+        "firstPageItems": 212,
+        "byteBudgetPages": 23,
+        "gatePassed": true
+      },
+      {
+        "family": "pagination",
+        "domain": "workspaceSymbols",
+        "sweep": "byteBudget",
+        "detail": "compact",
+        "limit": 200,
+        "byteBudget": 24576,
+        "pageCount": 32,
+        "maxPageBytes": 24567,
+        "firstPageItems": 159,
+        "byteBudgetPages": 31,
+        "gatePassed": true
+      },
+      {
+        "family": "pagination",
+        "domain": "workspaceSymbols",
+        "sweep": "byteBudget",
+        "detail": "compact",
+        "limit": 200,
+        "byteBudget": 32768,
+        "pageCount": 25,
+        "maxPageBytes": 31087,
+        "firstPageItems": 200,
+        "byteBudgetPages": 0,
+        "gatePassed": true
+      },
+      {
+        "family": "pagination",
+        "domain": "workspaceSymbols",
+        "sweep": "byteBudget",
+        "detail": "compact",
+        "limit": 200,
+        "byteBudget": 40960,
+        "pageCount": 25,
+        "maxPageBytes": 31087,
+        "firstPageItems": 200,
+        "byteBudgetPages": 0,
+        "gatePassed": true
+      },
+      {
+        "family": "pagination",
+        "domain": "references",
+        "sweep": "limit",
+        "limit": 50,
+        "byteBudget": 32768,
+        "pageCount": 200,
+        "maxPageBytes": 11289,
+        "gatePassed": true
+      },
+      {
+        "family": "pagination",
+        "domain": "references",
+        "sweep": "limit",
+        "limit": 75,
+        "byteBudget": 32768,
+        "pageCount": 134,
+        "maxPageBytes": 16838,
+        "gatePassed": true
+      },
+      {
+        "family": "pagination",
+        "domain": "references",
+        "sweep": "limit",
+        "limit": 100,
+        "byteBudget": 32768,
+        "pageCount": 100,
+        "maxPageBytes": 22390,
+        "gatePassed": true
+      },
+      {
+        "family": "pagination",
+        "domain": "references",
+        "sweep": "limit",
+        "limit": 200,
+        "byteBudget": 32768,
+        "pageCount": 69,
+        "maxPageBytes": 32606,
+        "gatePassed": true
+      },
+      {
+        "family": "pagination",
+        "domain": "references",
+        "sweep": "byteBudget",
+        "limit": 75,
+        "byteBudget": 24576,
+        "pageCount": 134,
+        "maxPageBytes": 16838,
+        "gatePassed": true
+      },
+      {
+        "family": "pagination",
+        "domain": "references",
+        "sweep": "byteBudget",
+        "limit": 75,
+        "byteBudget": 32768,
+        "pageCount": 134,
+        "maxPageBytes": 16838,
+        "gatePassed": true
+      },
+      {
+        "family": "pagination",
+        "domain": "references",
+        "sweep": "byteBudget",
+        "limit": 75,
+        "byteBudget": 40960,
+        "pageCount": 134,
+        "maxPageBytes": 16838,
+        "gatePassed": true
+      }
+    ],
+    "snapshot": [
+      {
+        "family": "snapshot.ttlSeconds",
+        "candidate": 30,
+        "expiredReads": 30,
+        "expiryRate": 0.3,
+        "retainedSeconds": 1600,
+        "gatePassed": true
+      },
+      {
+        "family": "snapshot.ttlSeconds",
+        "candidate": 120,
+        "expiredReads": 5,
+        "expiryRate": 0.05,
+        "retainedSeconds": 2650,
+        "gatePassed": true
+      },
+      {
+        "family": "snapshot.ttlSeconds",
+        "candidate": 300,
+        "expiredReads": 1,
+        "expiryRate": 0.01,
+        "retainedSeconds": 3070,
+        "gatePassed": true
+      },
+      {
+        "family": "snapshot.maxSnapshots",
+        "candidate": 8,
+        "overflowEvents": 10,
+        "overflowUnits": 96,
+        "estimatedMetadataKiB": 16,
+        "gatePassed": true
+      },
+      {
+        "family": "snapshot.maxSnapshots",
+        "candidate": 16,
+        "overflowEvents": 2,
+        "overflowUnits": 16,
+        "estimatedMetadataKiB": 32,
+        "gatePassed": true
+      },
+      {
+        "family": "snapshot.maxSnapshots",
+        "candidate": 32,
+        "overflowEvents": 0,
+        "overflowUnits": 0,
+        "estimatedMetadataKiB": 64,
+        "gatePassed": true
+      },
+      {
+        "family": "snapshot.maxItems",
+        "candidate": 10000,
+        "overflowEvents": 30,
+        "overflowItems": 620000,
+        "estimatedCanonicalMemoryMiB": 1.52587890625,
+        "gatePassed": true
+      },
+      {
+        "family": "snapshot.maxItems",
+        "candidate": 50000,
+        "overflowEvents": 2,
+        "overflowItems": 60000,
+        "estimatedCanonicalMemoryMiB": 7.62939453125,
+        "gatePassed": true
+      },
+      {
+        "family": "snapshot.maxItems",
+        "candidate": 100000,
+        "overflowEvents": 0,
+        "overflowItems": 0,
+        "estimatedCanonicalMemoryMiB": 15.2587890625,
+        "gatePassed": true
+      }
+    ],
+    "editorState": [
+      {
+        "family": "editorState.detail",
+        "editorCount": 1,
+        "selectionTextBytes": 0,
+        "detail": "minimal",
+        "bytes": 238,
+        "withinDefaultBudget": true,
+        "gatePassed": true
+      },
+      {
+        "family": "editorState.detail",
+        "editorCount": 1,
+        "selectionTextBytes": 0,
+        "detail": "compact",
+        "bytes": 379,
+        "withinDefaultBudget": true,
+        "gatePassed": true
+      },
+      {
+        "family": "editorState.detail",
+        "editorCount": 1,
+        "selectionTextBytes": 0,
+        "detail": "full",
+        "bytes": 655,
+        "withinDefaultBudget": true,
+        "gatePassed": true
+      },
+      {
+        "family": "editorState.detail",
+        "editorCount": 1,
+        "selectionTextBytes": 2048,
+        "detail": "minimal",
+        "bytes": 239,
+        "withinDefaultBudget": true,
+        "gatePassed": true
+      },
+      {
+        "family": "editorState.detail",
+        "editorCount": 1,
+        "selectionTextBytes": 2048,
+        "detail": "compact",
+        "bytes": 380,
+        "withinDefaultBudget": true,
+        "gatePassed": true
+      },
+      {
+        "family": "editorState.detail",
+        "editorCount": 1,
+        "selectionTextBytes": 2048,
+        "detail": "full",
+        "bytes": 2704,
+        "withinDefaultBudget": true,
+        "gatePassed": true
+      },
+      {
+        "family": "editorState.detail",
+        "editorCount": 1,
+        "selectionTextBytes": 20480,
+        "detail": "minimal",
+        "bytes": 239,
+        "withinDefaultBudget": true,
+        "gatePassed": true
+      },
+      {
+        "family": "editorState.detail",
+        "editorCount": 1,
+        "selectionTextBytes": 20480,
+        "detail": "compact",
+        "bytes": 380,
+        "withinDefaultBudget": true,
+        "gatePassed": true
+      },
+      {
+        "family": "editorState.detail",
+        "editorCount": 1,
+        "selectionTextBytes": 20480,
+        "detail": "full",
+        "bytes": 21136,
+        "withinDefaultBudget": true,
+        "gatePassed": true
+      },
+      {
+        "family": "editorState.detail",
+        "editorCount": 10,
+        "selectionTextBytes": 0,
+        "detail": "minimal",
+        "bytes": 238,
+        "withinDefaultBudget": true,
+        "gatePassed": true
+      },
+      {
+        "family": "editorState.detail",
+        "editorCount": 10,
+        "selectionTextBytes": 0,
+        "detail": "compact",
+        "bytes": 1015,
+        "withinDefaultBudget": true,
+        "gatePassed": true
+      },
+      {
+        "family": "editorState.detail",
+        "editorCount": 10,
+        "selectionTextBytes": 0,
+        "detail": "full",
+        "bytes": 2785,
+        "withinDefaultBudget": true,
+        "gatePassed": true
+      },
+      {
+        "family": "editorState.detail",
+        "editorCount": 10,
+        "selectionTextBytes": 2048,
+        "detail": "minimal",
+        "bytes": 239,
+        "withinDefaultBudget": true,
+        "gatePassed": true
+      },
+      {
+        "family": "editorState.detail",
+        "editorCount": 10,
+        "selectionTextBytes": 2048,
+        "detail": "compact",
+        "bytes": 1016,
+        "withinDefaultBudget": true,
+        "gatePassed": true
+      },
+      {
+        "family": "editorState.detail",
+        "editorCount": 10,
+        "selectionTextBytes": 2048,
+        "detail": "full",
+        "bytes": 4834,
+        "withinDefaultBudget": true,
+        "gatePassed": true
+      },
+      {
+        "family": "editorState.detail",
+        "editorCount": 10,
+        "selectionTextBytes": 20480,
+        "detail": "minimal",
+        "bytes": 239,
+        "withinDefaultBudget": true,
+        "gatePassed": true
+      },
+      {
+        "family": "editorState.detail",
+        "editorCount": 10,
+        "selectionTextBytes": 20480,
+        "detail": "compact",
+        "bytes": 1016,
+        "withinDefaultBudget": true,
+        "gatePassed": true
+      },
+      {
+        "family": "editorState.detail",
+        "editorCount": 10,
+        "selectionTextBytes": 20480,
+        "detail": "full",
+        "bytes": 23266,
+        "withinDefaultBudget": true,
+        "gatePassed": true
+      },
+      {
+        "family": "editorState.detail",
+        "editorCount": 50,
+        "selectionTextBytes": 0,
+        "detail": "minimal",
+        "bytes": 238,
+        "withinDefaultBudget": true,
+        "gatePassed": true
+      },
+      {
+        "family": "editorState.detail",
+        "editorCount": 50,
+        "selectionTextBytes": 0,
+        "detail": "compact",
+        "bytes": 3842,
+        "withinDefaultBudget": true,
+        "gatePassed": true
+      },
+      {
+        "family": "editorState.detail",
+        "editorCount": 50,
+        "selectionTextBytes": 0,
+        "detail": "full",
+        "bytes": 12332,
+        "withinDefaultBudget": true,
+        "gatePassed": true
+      },
+      {
+        "family": "editorState.detail",
+        "editorCount": 50,
+        "selectionTextBytes": 2048,
+        "detail": "minimal",
+        "bytes": 239,
+        "withinDefaultBudget": true,
+        "gatePassed": true
+      },
+      {
+        "family": "editorState.detail",
+        "editorCount": 50,
+        "selectionTextBytes": 2048,
+        "detail": "compact",
+        "bytes": 3843,
+        "withinDefaultBudget": true,
+        "gatePassed": true
+      },
+      {
+        "family": "editorState.detail",
+        "editorCount": 50,
+        "selectionTextBytes": 2048,
+        "detail": "full",
+        "bytes": 14381,
+        "withinDefaultBudget": true,
+        "gatePassed": true
+      },
+      {
+        "family": "editorState.detail",
+        "editorCount": 50,
+        "selectionTextBytes": 20480,
+        "detail": "minimal",
+        "bytes": 239,
+        "withinDefaultBudget": true,
+        "gatePassed": true
+      },
+      {
+        "family": "editorState.detail",
+        "editorCount": 50,
+        "selectionTextBytes": 20480,
+        "detail": "compact",
+        "bytes": 3843,
+        "withinDefaultBudget": true,
+        "gatePassed": true
+      },
+      {
+        "family": "editorState.detail",
+        "editorCount": 50,
+        "selectionTextBytes": 20480,
+        "detail": "full",
+        "bytes": 32813,
+        "withinDefaultBudget": false,
+        "gatePassed": true
+      }
+    ],
+    "editText": [
+      {
+        "family": "editTextThresholdBytes",
+        "thresholdKiB": 8,
+        "payloadKiB": 1,
+        "accepted": true,
+        "code": null,
+        "responseBytes": 1204,
+        "gatePassed": true
+      },
+      {
+        "family": "editTextThresholdBytes",
+        "thresholdKiB": 8,
+        "payloadKiB": 4,
+        "accepted": true,
+        "code": null,
+        "responseBytes": 4276,
+        "gatePassed": true
+      },
+      {
+        "family": "editTextThresholdBytes",
+        "thresholdKiB": 8,
+        "payloadKiB": 8,
+        "accepted": true,
+        "code": null,
+        "responseBytes": 8372,
+        "gatePassed": true
+      },
+      {
+        "family": "editTextThresholdBytes",
+        "thresholdKiB": 8,
+        "payloadKiB": 16,
+        "accepted": false,
+        "code": "EDIT_TEXT_RESPONSE_TOO_LARGE",
+        "gatePassed": true
+      },
+      {
+        "family": "editTextThresholdBytes",
+        "thresholdKiB": 8,
+        "payloadKiB": 24,
+        "accepted": false,
+        "code": "EDIT_TEXT_RESPONSE_TOO_LARGE",
+        "gatePassed": true
+      },
+      {
+        "family": "editTextThresholdBytes",
+        "thresholdKiB": 8,
+        "payloadKiB": 32,
+        "accepted": false,
+        "code": "EDIT_TEXT_RESPONSE_TOO_LARGE",
+        "gatePassed": true
+      },
+      {
+        "family": "editTextThresholdBytes",
+        "thresholdKiB": 8,
+        "payloadKiB": 40,
+        "accepted": false,
+        "code": "EDIT_TEXT_RESPONSE_TOO_LARGE",
+        "gatePassed": true
+      },
+      {
+        "family": "editTextThresholdBytes",
+        "thresholdKiB": 16,
+        "payloadKiB": 1,
+        "accepted": true,
+        "code": null,
+        "responseBytes": 1204,
+        "gatePassed": true
+      },
+      {
+        "family": "editTextThresholdBytes",
+        "thresholdKiB": 16,
+        "payloadKiB": 4,
+        "accepted": true,
+        "code": null,
+        "responseBytes": 4276,
+        "gatePassed": true
+      },
+      {
+        "family": "editTextThresholdBytes",
+        "thresholdKiB": 16,
+        "payloadKiB": 8,
+        "accepted": true,
+        "code": null,
+        "responseBytes": 8372,
+        "gatePassed": true
+      },
+      {
+        "family": "editTextThresholdBytes",
+        "thresholdKiB": 16,
+        "payloadKiB": 16,
+        "accepted": true,
+        "code": null,
+        "responseBytes": 16564,
+        "gatePassed": true
+      },
+      {
+        "family": "editTextThresholdBytes",
+        "thresholdKiB": 16,
+        "payloadKiB": 24,
+        "accepted": false,
+        "code": "EDIT_TEXT_RESPONSE_TOO_LARGE",
+        "gatePassed": true
+      },
+      {
+        "family": "editTextThresholdBytes",
+        "thresholdKiB": 16,
+        "payloadKiB": 32,
+        "accepted": false,
+        "code": "EDIT_TEXT_RESPONSE_TOO_LARGE",
+        "gatePassed": true
+      },
+      {
+        "family": "editTextThresholdBytes",
+        "thresholdKiB": 16,
+        "payloadKiB": 40,
+        "accepted": false,
+        "code": "EDIT_TEXT_RESPONSE_TOO_LARGE",
+        "gatePassed": true
+      },
+      {
+        "family": "editTextThresholdBytes",
+        "thresholdKiB": 24,
+        "payloadKiB": 1,
+        "accepted": true,
+        "code": null,
+        "responseBytes": 1204,
+        "gatePassed": true
+      },
+      {
+        "family": "editTextThresholdBytes",
+        "thresholdKiB": 24,
+        "payloadKiB": 4,
+        "accepted": true,
+        "code": null,
+        "responseBytes": 4276,
+        "gatePassed": true
+      },
+      {
+        "family": "editTextThresholdBytes",
+        "thresholdKiB": 24,
+        "payloadKiB": 8,
+        "accepted": true,
+        "code": null,
+        "responseBytes": 8372,
+        "gatePassed": true
+      },
+      {
+        "family": "editTextThresholdBytes",
+        "thresholdKiB": 24,
+        "payloadKiB": 16,
+        "accepted": true,
+        "code": null,
+        "responseBytes": 16564,
+        "gatePassed": true
+      },
+      {
+        "family": "editTextThresholdBytes",
+        "thresholdKiB": 24,
+        "payloadKiB": 24,
+        "accepted": true,
+        "code": null,
+        "responseBytes": 24756,
+        "gatePassed": true
+      },
+      {
+        "family": "editTextThresholdBytes",
+        "thresholdKiB": 24,
+        "payloadKiB": 32,
+        "accepted": false,
+        "code": "EDIT_TEXT_RESPONSE_TOO_LARGE",
+        "gatePassed": true
+      },
+      {
+        "family": "editTextThresholdBytes",
+        "thresholdKiB": 24,
+        "payloadKiB": 40,
+        "accepted": false,
+        "code": "EDIT_TEXT_RESPONSE_TOO_LARGE",
+        "gatePassed": true
+      },
+      {
+        "family": "editTextThresholdBytes",
+        "thresholdKiB": 32,
+        "payloadKiB": 1,
+        "accepted": true,
+        "code": null,
+        "responseBytes": 1204,
+        "gatePassed": true
+      },
+      {
+        "family": "editTextThresholdBytes",
+        "thresholdKiB": 32,
+        "payloadKiB": 4,
+        "accepted": true,
+        "code": null,
+        "responseBytes": 4276,
+        "gatePassed": true
+      },
+      {
+        "family": "editTextThresholdBytes",
+        "thresholdKiB": 32,
+        "payloadKiB": 8,
+        "accepted": true,
+        "code": null,
+        "responseBytes": 8372,
+        "gatePassed": true
+      },
+      {
+        "family": "editTextThresholdBytes",
+        "thresholdKiB": 32,
+        "payloadKiB": 16,
+        "accepted": true,
+        "code": null,
+        "responseBytes": 16564,
+        "gatePassed": true
+      },
+      {
+        "family": "editTextThresholdBytes",
+        "thresholdKiB": 32,
+        "payloadKiB": 24,
+        "accepted": true,
+        "code": null,
+        "responseBytes": 24756,
+        "gatePassed": true
+      },
+      {
+        "family": "editTextThresholdBytes",
+        "thresholdKiB": 32,
+        "payloadKiB": 32,
+        "accepted": false,
+        "code": "EDIT_TEXT_RESPONSE_TOO_LARGE",
+        "responseBytes": 32948,
+        "gatePassed": true
+      },
+      {
+        "family": "editTextThresholdBytes",
+        "thresholdKiB": 32,
+        "payloadKiB": 40,
+        "accepted": false,
+        "code": "EDIT_TEXT_RESPONSE_TOO_LARGE",
+        "gatePassed": true
+      }
+    ],
+    "notifications": [
+      {
+        "family": "notifications.coalesce",
+        "candidate": false,
+        "inputEvents": 10000,
+        "outputEvents": 10000,
+        "reductionRatio": 0,
+        "savedEventsPreserved": true,
+        "gatePassed": true
+      },
+      {
+        "family": "notifications.coalesce",
+        "candidate": true,
+        "inputEvents": 10000,
+        "outputEvents": 5000,
+        "reductionRatio": 0.5,
+        "savedEventsPreserved": true,
+        "gatePassed": true
+      },
+      {
+        "family": "notifications.limit",
+        "candidate": 20,
+        "pagesForCoalescedStream": 250,
+        "firstPageBytes": 1389,
+        "gatePassed": true
+      },
+      {
+        "family": "notifications.limit",
+        "candidate": 50,
+        "pagesForCoalescedStream": 100,
+        "firstPageBytes": 3478,
+        "gatePassed": true
+      },
+      {
+        "family": "notifications.limit",
+        "candidate": 100,
+        "pagesForCoalescedStream": 50,
+        "firstPageBytes": 7008,
+        "gatePassed": true
+      },
+      {
+        "family": "notifications.ringCapacity",
+        "candidate": 100,
+        "gapEvents": 20,
+        "gapRate": 0.2,
+        "estimatedFullPayloadKiB": 41.015625,
+        "gatePassed": true
+      },
+      {
+        "family": "notifications.ringCapacity",
+        "candidate": 500,
+        "gapEvents": 5,
+        "gapRate": 0.05,
+        "estimatedFullPayloadKiB": 205.078125,
+        "gatePassed": true
+      },
+      {
+        "family": "notifications.ringCapacity",
+        "candidate": 1000,
+        "gapEvents": 1,
+        "gapRate": 0.01,
+        "estimatedFullPayloadKiB": 410.15625,
+        "gatePassed": true
+      },
+      {
+        "family": "notifications.detail",
+        "candidate": "minimal",
+        "bytesFor50Events": 3478,
+        "gatePassed": true
+      },
+      {
+        "family": "notifications.detail",
+        "candidate": "compact",
+        "bytesFor50Events": 10752,
+        "gatePassed": true
+      },
+      {
+        "family": "notifications.detail",
+        "candidate": "full",
+        "bytesFor50Events": 27953,
+        "gatePassed": true
+      }
+    ]
+  },
+  "generatedAt": "2026-09-03T12:52:52.153Z"
+}

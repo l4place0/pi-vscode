@@ -1,0 +1,216 @@
+{
+  "schemaVersion": 1,
+  "experiment": "bridge-response-protocol-v2-ablation-v1",
+  "method": "deterministic canonical replay; one implemented mechanism removed per row",
+  "baseline": "implemented Bridge Response Protocol v2 defaults",
+  "fixtureSummary": {
+    "locations": 10000,
+    "locationFiles": 200,
+    "diagnostics": 2000,
+    "notifications": 10000,
+    "sameTimestampEvents": 10,
+    "editorCount": 50,
+    "selectionTextKiB": 20,
+    "editEchoKiB": 64
+  },
+  "ablations": [
+    "compactGrouping",
+    "diagnosticDefaults",
+    "snapshotFreeze",
+    "byteBudgetPaging",
+    "sequenceCursor",
+    "notificationCoalescing",
+    "editorCompactProjection",
+    "editTextPreflight",
+    "explicitVersionGate"
+  ],
+  "rows": [
+    {
+      "mechanism": "compactGrouping",
+      "removed": "Remove per-file grouping and repeat filePath/URI per hit",
+      "baseline": {
+        "bytes": 800686
+      },
+      "ablated": {
+        "bytes": 1646090
+      },
+      "effect": {
+        "byteIncrease": 845404,
+        "byteMultiplier": 2.06,
+        "baselineReduction": 0.5135830969145065
+      },
+      "gatePassed": true
+    },
+    {
+      "mechanism": "diagnosticDefaults",
+      "removed": "Replace active error/warning defaults with unfiltered workspace",
+      "baseline": {
+        "returned": 3,
+        "relevantReturned": 3,
+        "noise": 0
+      },
+      "ablated": {
+        "returned": 2000,
+        "relevantReturned": 3,
+        "noise": 1997
+      },
+      "effect": {
+        "extraNoise": 1997
+      },
+      "gatePassed": true
+    },
+    {
+      "mechanism": "snapshotFreeze",
+      "removed": "Re-run a changed provider for page two",
+      "baseline": {
+        "returned": 50,
+        "unique": 50,
+        "duplicates": 0,
+        "missing": 0,
+        "complete": true
+      },
+      "ablated": {
+        "returned": 50,
+        "unique": 49,
+        "duplicates": 1,
+        "missing": 1,
+        "complete": false
+      },
+      "effect": {
+        "duplicatesIntroduced": 1,
+        "missingIntroduced": 1
+      },
+      "gatePassed": true
+    },
+    {
+      "mechanism": "byteBudgetPaging",
+      "removed": "Return all logical items without byte-boundary paging",
+      "baseline": {
+        "pageCount": 45,
+        "maxPageBytes": 32734,
+        "completeItems": 10000
+      },
+      "ablated": {
+        "pageCount": 1,
+        "bytes": 800686,
+        "exceedsPiHardLimit": true
+      },
+      "effect": {
+        "hardLimitOverrunBytes": 749486
+      },
+      "gatePassed": true
+    },
+    {
+      "mechanism": "sequenceCursor",
+      "removed": "Use millisecond timestamp as the exclusive consumption cursor",
+      "baseline": {
+        "unread": 10,
+        "lost": 0
+      },
+      "ablated": {
+        "unread": 0,
+        "lost": 10
+      },
+      "effect": {
+        "additionalLostEvents": 10
+      },
+      "gatePassed": true
+    },
+    {
+      "mechanism": "notificationCoalescing",
+      "removed": "Disable semantic event coalescing",
+      "baseline": {
+        "events": 5000,
+        "bytes": 1382264,
+        "savedEvents": 1000
+      },
+      "ablated": {
+        "events": 10000,
+        "bytes": 2578523,
+        "savedEvents": 1000
+      },
+      "effect": {
+        "eventReduction": 0.5,
+        "byteReduction": 0.4639318710750302
+      },
+      "gatePassed": true
+    },
+    {
+      "mechanism": "editorCompactProjection",
+      "removed": "Make full editor payload the default",
+      "baseline": {
+        "bytes": 3659,
+        "includesSelectionText": false
+      },
+      "ablated": {
+        "bytes": 32303,
+        "includesSelectionText": true
+      },
+      "effect": {
+        "byteMultiplier": 8.83
+      },
+      "gatePassed": true
+    },
+    {
+      "mechanism": "editTextPreflight",
+      "removed": "Apply before checking edit-text and final output budgets",
+      "baseline": {
+        "applied": false,
+        "code": "EDIT_TEXT_RESPONSE_TOO_LARGE",
+        "responseBytes": 180
+      },
+      "ablated": {
+        "applied": true,
+        "code": null,
+        "responseBytes": 65650
+      },
+      "effect": {
+        "hardLimitOverrunBytes": 14450,
+        "unsafeMutation": true
+      },
+      "gatePassed": true
+    },
+    {
+      "mechanism": "explicitVersionGate",
+      "removed": "Infer v2 from detail instead of responseVersion=2",
+      "baseline": {
+        "routes": [
+          "legacy",
+          "v2"
+        ],
+        "legacyPreserved": true
+      },
+      "ablated": {
+        "routes": [
+          "v2",
+          "v2"
+        ],
+        "legacyPreserved": false
+      },
+      "effect": {
+        "legacyCallsChanged": 1
+      },
+      "gatePassed": true
+    }
+  ],
+  "correctnessGatePassed": true,
+  "summary": {
+    "correctnessCritical": [
+      "snapshotFreeze",
+      "byteBudgetPaging",
+      "sequenceCursor",
+      "editTextPreflight",
+      "explicitVersionGate"
+    ],
+    "efficiencyCritical": [
+      "compactGrouping",
+      "diagnosticDefaults",
+      "notificationCoalescing",
+      "editorCompactProjection"
+    ],
+    "compactGroupingByteReduction": 0.5135830969145065,
+    "notificationEventReduction": 0.5,
+    "editorFullByteMultiplier": 8.83
+  },
+  "generatedAt": "2026-09-03T14:02:15.128Z"
+}

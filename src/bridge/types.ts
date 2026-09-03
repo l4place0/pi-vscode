@@ -1,5 +1,6 @@
 import type { Server } from "node:http";
 import * as vscode from "vscode";
+import type { SnapshotStore } from "./protocol.ts";
 
 export interface BridgeSelection {
   text: string;
@@ -40,6 +41,7 @@ export interface BridgeEditorInfo {
 
 export interface BridgeNotification {
   id: string;
+  sequence: number;
   type:
     | "selection_changed"
     | "diagnostics_changed"
@@ -49,6 +51,8 @@ export interface BridgeNotification {
     | "document_saved";
   timestamp: number;
   data: unknown;
+  raw?: unknown;
+  coalescedCount?: number;
 }
 
 export interface CachedCodeAction {
@@ -69,6 +73,9 @@ export interface RpcRequest {
 }
 
 export interface BridgeState {
+  instanceId: string;
+  snapshotStore: SnapshotStore;
+  nextNotificationSequence: number;
   latestSelection: BridgeSelection | undefined;
   notifications: BridgeNotification[];
   codeActions: Map<string, CachedCodeAction>;
