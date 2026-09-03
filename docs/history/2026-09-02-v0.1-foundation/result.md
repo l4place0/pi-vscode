@@ -1,9 +1,9 @@
 # 实施结果
 
-- 状态：实施与自动验收完成，完整手工矩阵待运行
+- 状态：实施与自动验收完成，手工矩阵已明确延期
 - 实施日期：2026-09-02
 - 最终版本：0.1.0
-- 档案状态：`in-progress`
+- 档案状态：`completed`
 
 ## 实际修改
 
@@ -112,8 +112,10 @@
 
 ## 遗留问题
 
+- 用户于 2026-09-03 确认 v0.1 foundation 可以归档；下列手工项目全部作为后续待办，不再
+  阻塞本档案的 `completed` 状态。
 - macOS/Linux F5 与真实 Pi TUI 手工验收按本轮决定延期；三平台自动门禁已通过。
-- Windows 真实 Pi TUI 启动已手工通过，multi-root cwd/context 已由 Extension Host 自动通过。F5 UI、Explorer 菜单入口、session restore、真实 `@pi-fork` text delta/native UI 和 Packages install/remove 仍按 Windows SOP 待手工验证。
+- Windows 真实 Pi TUI 启动已手工通过，multi-root cwd/context 已由 Extension Host 自动通过。F5 UI、Explorer 菜单入口、session restore、真实 `@pi-fork` text delta/native UI 和 Packages install/remove 的 Windows SOP 已延期。
 - 官方扩展与 fork 同时安装的完整 A/B 手工流程按本轮决定延期；所有已知全局 contribution/storage IDs 已隔离并有 manifest 测试。
 - Packages registry browser 的 250 次 metadata fan-out 仍保留，后续版本可独立评估产品和性能取舍。
 - GitHub Actions 提示 `pnpm/action-setup@v4` 与 `actions/upload-artifact@v4` 的 Node 20 action runtime 已被 runner 强制切换到 Node 24；当前不影响通过结果，后续应在上游 action 发布兼容版本后升级。

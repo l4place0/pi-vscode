@@ -133,9 +133,10 @@ Windows 的详细、可逐项记录 SOP 见 `docs/manual-acceptance-windows.md`�
 11. 官方插件与 fork 同时安装时，命令、设置、sidebar 和 session state 不冲突。
 12. 本地 VSIX 在干净 profile 中安装、激活、卸载成功。
 
-本轮范围调整：官方扩展与 fork 的 A/B 验收、macOS/Linux 手工 F5 与真实 TUI smoke 延期，
-不阻塞当前 Windows 收口；三平台 CI 仍必须通过。档案在剩余 Windows 手工项目完成前保持
-`in-progress`。
+本轮范围调整：用户于 2026-09-03 确认 Windows SOP、官方扩展与 fork 的 A/B 验收、
+macOS/Linux 手工 F5 与真实 TUI smoke 全部延期为后续待办，不阻塞 v0.1 foundation 归档。
+三平台 CI、Pi smoke、Extension Host、干净 profile VSIX smoke 和内容验证均已通过，档案状态
+更新为 `completed`。
 
 ## 7. Release candidate 门禁
 

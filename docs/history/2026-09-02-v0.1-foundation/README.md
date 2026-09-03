@@ -1,6 +1,6 @@
 # v0.1 foundation
 
-- 状态：`in-progress`
+- 状态：`completed`
 - 启动日期：2026-09-02
 - 兼容基线：Pi 0.84.4
 - 发布边界：本地 VSIX 和 GitHub CI artifact；不包含 VS Code Marketplace/Open VSX 发布
@@ -64,6 +64,6 @@
 - [x] 完成本地 VSIX 验收。
 
 远端 Windows/macOS/Linux CI 已通过，multi-root cwd/context 已增加真实 Extension Host 自动
-验收。Windows F5 视觉、Explorer 菜单入口、session restore 和真实 Chat/Packages 仍按
-`docs/manual-acceptance-windows.md` 执行；官方扩展 A/B 与 macOS/Linux 手工 F5/TUI 已延期。
-因此档案继续保持 `in-progress`。
+验收，修复后的 Windows VSIX 与 Pi TUI 启动已由用户初步确认。用户于 2026-09-03 确认本轮
+可以归档；Windows SOP、官方扩展 A/B 与 macOS/Linux 手工 F5/TUI 均转为后续待办，不阻塞
+v0.1 foundation 完成。

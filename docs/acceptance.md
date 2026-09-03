@@ -49,6 +49,9 @@ pnpm acceptance
 
 自动化覆盖结构、协议和进程生命周期，但下列交互或视觉结果仍需人工判断：
 
+v0.1 foundation 于 2026-09-03 经用户确认归档，以下完整手工矩阵作为后续版本待办保留，
+不阻塞该档案的完成状态。
+
 Windows 当前执行步骤、预期结果、取证和隔离方式见
 [`manual-acceptance-windows.md`](manual-acceptance-windows.md)。
 
