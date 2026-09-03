@@ -34,7 +34,7 @@ jobs:
       - run: pnpm typecheck
       - run: pnpm test:unit
       - run: pnpm build
-      - run: pnpm test:pi -- 0.84.4
+      - run: pnpm test:pi 0.84.4
 
   extension-host:
     name: Extension Host (Ubuntu)
@@ -90,4 +90,4 @@ jobs:
           node-version: 22
           cache: pnpm
       - run: pnpm install --frozen-lockfile
-      - run: pnpm test:pi -- latest
+      - run: pnpm test:pi latest

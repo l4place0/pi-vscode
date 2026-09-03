@@ -1,17 +1,18 @@
 #!/usr/bin/env node
 import { spawn } from "node:child_process";
+import { existsSync } from "node:fs";
 import { mkdtemp, rm } from "node:fs/promises";
 import { createServer } from "node:http";
 import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
-const requestedVersion = process.argv[2] || "0.84.4";
+const requestedVersion = process.argv.slice(2).find((argument) => argument !== "--") || "0.84.4";
 const packageSpec = `@earendil-works/pi-coding-agent@${requestedVersion}`;
 const temporaryRoot = await mkdtemp(join(tmpdir(), "pi-vscode-smoke-"));
 
 try {
-  const npmCli = join(dirname(process.execPath), "node_modules", "npm", "bin", "npm-cli.js");
+  const npmCli = resolveNpmCli();
   await run(process.execPath, [
     npmCli,
     "install",
@@ -48,6 +49,18 @@ try {
   console.log(`Pi ${version.stdout.trim()} smoke passed.`);
 } finally {
   await rm(temporaryRoot, { recursive: true, force: true });
+}
+
+function resolveNpmCli() {
+  const nodeDirectory = dirname(process.execPath);
+  const candidates = [
+    join(nodeDirectory, "node_modules", "npm", "bin", "npm-cli.js"),
+    resolve(nodeDirectory, "..", "lib", "node_modules", "npm", "bin", "npm-cli.js"),
+    resolve(nodeDirectory, "..", "node_modules", "npm", "bin", "npm-cli.js"),
+  ];
+  const npmCli = candidates.find((candidate) => existsSync(candidate));
+  if (npmCli) return npmCli;
+  throw new Error(`Unable to locate npm CLI next to Node.js. Checked: ${candidates.join(", ")}`);
 }
 
 async function runRpcSmoke(piCli) {
