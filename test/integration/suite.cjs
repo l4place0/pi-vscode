@@ -104,9 +104,155 @@ async function assertMultiRootTerminalContexts() {
     /selected this directory in the VS Code Explorer/,
   );
 
+  await assertBridgeProtocol(activeEditorInvocation, activeFile, document);
+
   for (const candidate of vscode.window.terminals) {
     if (!existingTerminals.has(candidate) && candidate.name === "Pi Fork") candidate.dispose();
   }
+}
+
+async function assertBridgeProtocol(invocation, activeFile, document) {
+  assert.ok(invocation.bridgeUrl, "Pi invocation receives the bridge URL");
+  assert.ok(invocation.bridgeToken, "Pi invocation receives the bridge token");
+  const rpc = (method, params = {}) => bridgeRpc(invocation, method, params);
+
+  const legacy = await rpc("getEditorState");
+  assert.ok(Array.isArray(legacy.workspaceFolders), "legacy RPC retains its bare editor response");
+  assert.equal(legacy.detail, undefined, "legacy RPC has no detail wrapper");
+  assert.equal(legacy.meta, undefined, "legacy RPC does not gain a v2 envelope");
+
+  for (const detail of ["minimal", "compact", "full"]) {
+    const result = await rpc("getEditorState", { responseVersion: 2, detail });
+    assert.equal(result.detail, detail);
+    assert.equal(result.meta.protocolVersion, 2);
+    assert.equal(result.meta.truncated, false);
+  }
+
+  const diagnostics = await rpc("getDiagnostics", {
+    responseVersion: 2,
+    detail: "compact",
+    scope: "active",
+    severity: ["error", "warning", "information", "hint"],
+  });
+  assert.equal(diagnostics.meta.protocolVersion, 2);
+  assert.equal(diagnostics.meta.total, diagnostics.meta.returned);
+  if (!legacy.activeEditor) {
+    assert.ok(
+      diagnostics.meta.warnings.some((warning) => warning.includes("No active editor")),
+      "active diagnostics remains empty and warns when no editor is active",
+    );
+  }
+
+  const help = await rpc("bridgeHelp", {
+    responseVersion: 2,
+    tool: "vscode_get_diagnostics",
+    topic: "parameters",
+    level: "compact",
+  });
+  assert.deepEqual(Object.keys(help.data.tools), ["vscode_get_diagnostics"]);
+  assert.equal(help.data.tools.vscode_get_diagnostics.defaults.limit, 100);
+
+  const original = document.getText();
+  const invalidTextDetail = await rpc("applyWorkspaceEdit", {
+    responseVersion: 2,
+    detail: "compact",
+    includeEditText: true,
+    edits: [
+      {
+        filePath: activeFile,
+        range: positionRange(0, 0, 0, 0),
+        newText: "",
+      },
+    ],
+  });
+  assert.equal(invalidTextDetail.error.code, "EDIT_TEXT_REQUIRES_FULL");
+  assert.equal(document.getText(), original);
+
+  const rejected = await rpc("applyWorkspaceEdit", {
+    responseVersion: 2,
+    detail: "full",
+    includeEditText: true,
+    edits: [
+      {
+        filePath: activeFile,
+        range: positionRange(0, 0, 0, 0),
+        newText: "x".repeat(25 * 1024),
+      },
+    ],
+  });
+  assert.equal(rejected.error.code, "EDIT_TEXT_RESPONSE_TOO_LARGE");
+  assert.equal(document.getText(), original, "oversized edit text is rejected before mutation");
+
+  const budgetRejected = await rpc("applyWorkspaceEdit", {
+    responseVersion: 2,
+    detail: "full",
+    includeEditText: true,
+    maxOutputBytes: 1024,
+    edits: [
+      {
+        filePath: activeFile,
+        range: positionRange(0, 0, 0, 0),
+        newText: "x".repeat(2 * 1024),
+      },
+    ],
+  });
+  assert.equal(budgetRejected.error.code, "EDIT_TEXT_RESPONSE_TOO_LARGE");
+  assert.equal(document.getText(), original, "edit text exceeding caller budget is not applied");
+
+  const baseline = await rpc("getNotifications", {
+    responseVersion: 2,
+    start: "now",
+  });
+  const applied = await rpc("applyWorkspaceEdit", {
+    responseVersion: 2,
+    detail: "compact",
+    edits: [
+      {
+        filePath: activeFile,
+        range: positionRange(0, 22, 0, 26),
+        newText: "false",
+      },
+    ],
+  });
+  assert.equal(applied.data.applied, true);
+  assert.equal(applied.data.requestedEditCount, 1);
+  assert.equal(applied.data.editCount, 1);
+  assert.equal(applied.data.filesChanged, 1);
+  assert.equal(JSON.stringify(applied).includes('newText":"false"'), false);
+  assert.match(document.getText(), /active = false/);
+
+  const notifications = await rpc("getNotifications", {
+    responseVersion: 2,
+    afterCursor: baseline.data.cursor,
+    coalesce: false,
+  });
+  assert.ok(
+    notifications.data.notifications.some(
+      (notification) => notification.type === "document_dirty_changed",
+    ),
+    "v2 notification cursor observes the edit event",
+  );
+}
+
+function positionRange(startLine, startCharacter, endLine, endCharacter) {
+  return {
+    start: { line: startLine, character: startCharacter },
+    end: { line: endLine, character: endCharacter },
+  };
+}
+
+async function bridgeRpc(invocation, method, params = {}) {
+  const response = await fetch(`${invocation.bridgeUrl}/rpc`, {
+    method: "POST",
+    headers: {
+      "content-type": "application/json",
+      "x-pi-vscode-authorization": invocation.bridgeToken,
+    },
+    body: JSON.stringify({ method, params }),
+  });
+  assert.equal(response.status, 200, `bridge ${method} returns HTTP 200`);
+  const payload = await response.json();
+  return payload.result;
 }
 
 function getSystemPrompt(args) {

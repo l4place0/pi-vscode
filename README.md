@@ -73,6 +73,7 @@ Each pi terminal launched by the extension loads a bundled pi extension that can
 | `vscode_get_references`        | Symbol references at a given file position                                                                                                                             |
 | `vscode_get_code_actions`      | Available code actions / quick fixes for a selection or explicit range, plus intersecting diagnostics                                                                  |
 | `vscode_get_notifications`     | Buffered bridge events such as selection, editor, diagnostics, save, and dirty-state changes                                                                           |
+| `vscode_bridge_help`           | Exact v2 defaults, parameters, detail matrices, paging units, path rules, costs, notifications, and compatibility                                                      |
 
 ### Action tools
 
@@ -97,8 +98,13 @@ Each pi terminal launched by the extension loads a bundled pi extension that can
 - `vscode_format_range` accepts either `selection` or explicit `start` / `end` positions.
 - `vscode_format_document` / `vscode_format_range` use VS Code formatting providers and apply formatter-generated `TextEdit[]` results with `workspace.applyEdit`, which is safer for open or dirty buffers than shelling out.
 - `vscode_get_selection` falls back to the latest cached VS Code selection when focus is in the pi terminal and VS Code reports no active text editor.
-- `vscode_get_notifications` supports `since` and `limit` parameters for incremental polling.
-- Oversized bridge tool results are capped; when a response exceeds the limit, the tool returns a valid JSON wrapper with `truncated: true`, original size metadata, and a `resultJsonPrefix` preview.
+- Bundled tools request bridge response protocol v2. Responses use a `{ detail, data, meta }` envelope with `meta.protocolVersion: 2`; direct RPC clients that omit `responseVersion: 2` retain the legacy bare response during the compatibility window.
+- General v2 tools default to `detail: "compact"`; notifications default to `"minimal"`. `"full"` is explicit and carries the highest output cost.
+- Diagnostics default to the active editor, error/warning severities, and 100 diagnostics per page. References default to 75 locations and workspace symbols to 200 symbols per page.
+- Paginated responses return a frozen-snapshot `nextCursor`. Continue with the same method, query/filter parameters, and detail; cursors expire after 120 seconds.
+- `vscode_get_notifications` uses an instance-bound sequence `afterCursor`, defaults to `start: "buffer"`, `limit: 50`, and coalescing enabled. A ring-buffer gap explicitly requests resynchronization.
+- The default UTF-8 response budget is 32 KiB, callers may request at most 40 KiB, and Pi enforces a 50 KiB hard cap. v2 never returns a partial `resultJsonPrefix`.
+- Edit tools do not return replacement text by default. Text requires `detail: "full"` plus `includeEditText: true` and is rejected before applying when it exceeds the 24 KiB safety threshold.
 
 These bridge tools let pi inspect selections, diagnostics, symbols, definitions, declarations, implementations, hover/type info, workspace-wide symbol search, references, quick-fix availability, dirty state, and recent IDE events, while also safely opening files, saving buffers, applying workspace edits, formatting open buffers through VS Code providers, running VS Code code actions, and surfacing notifications back to the user.
 

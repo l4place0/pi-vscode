@@ -50,6 +50,16 @@ export default function (pi) {
     const lineCount = text.split("\n").length;
     const byteCount = Buffer.byteLength(text, "utf8");
     if (lineCount <= MAX_RESULT_LINES && byteCount <= MAX_RESULT_BYTES) return text;
+    if (value?.meta?.protocolVersion === 2) {
+      return JSON.stringify({
+        error: {
+          code: "V2_RESPONSE_TOO_LARGE",
+          message: "Bridge v2 response exceeded the Pi hard output limit.",
+          details: { originalBytes: byteCount, originalLines: lineCount },
+        },
+        meta: { protocolVersion: 2 },
+      });
+    }
     return JSON.stringify({
       truncated: true,
       message:
@@ -216,20 +226,84 @@ export default function (pi) {
     stopStatusUpdates(ctx);
   });
 
+  const detailProperty = {
+    type: "string",
+    enum: ["minimal", "compact", "full"],
+    description: "Response detail level; defaults to compact (notifications default to minimal)",
+  };
+  const maxOutputBytesProperty = {
+    type: "number",
+    description: "Soft UTF-8 output budget; defaults to 32768 and cannot exceed 40960",
+  };
+  const limitProperty = {
+    type: "number",
+    description: "Maximum logical items in this page",
+  };
+  const cursorProperty = {
+    type: "string",
+    description: "Opaque continuation cursor returned by the previous page",
+  };
+  const pagedMethods = new Set([
+    "getDiagnostics",
+    "getDocumentSymbols",
+    "getDefinitions",
+    "getTypeDefinitions",
+    "getImplementations",
+    "getDeclarations",
+    "getWorkspaceSymbols",
+    "getReferences",
+  ]);
+  const editMethods = new Set(["applyWorkspaceEdit", "formatDocument", "formatRange"]);
+  const protocolProperties = (rpcMethod) =>
+    rpcMethod === "bridgeHelp"
+      ? {}
+      : {
+          detail: detailProperty,
+          maxOutputBytes: maxOutputBytesProperty,
+          ...(pagedMethods.has(rpcMethod) ? { limit: limitProperty, cursor: cursorProperty } : {}),
+          ...(editMethods.has(rpcMethod)
+            ? {
+                includeEditText: {
+                  type: "boolean",
+                  description:
+                    "Include oldText/newText; requires detail=full and must fit the 24576-byte edit-text safety budget",
+                },
+              }
+            : {}),
+        };
+  const withProtocolParameters = (rpcMethod, parameters = {}) => ({
+    type: "object",
+    ...parameters,
+    properties: {
+      ...parameters.properties,
+      ...protocolProperties(rpcMethod),
+    },
+    additionalProperties: false,
+  });
+  const protocolDescription = (rpcMethod) => {
+    if (rpcMethod === "bridgeHelp") return " Returns a fixed compact v2 envelope.";
+    const defaultDetail = rpcMethod === "getNotifications" ? "minimal" : "compact";
+    const paging = pagedMethods.has(rpcMethod) ? " Supports stable limit/cursor paging." : "";
+    const editText = editMethods.has(rpcMethod)
+      ? " Full edit text is opt-in with detail=full and includeEditText=true."
+      : "";
+    return ` Returns a v2 envelope; detail defaults to ${defaultDetail}.${paging} Full detail costs more output.${editText}`;
+  };
+
   const tool = ({ rpcMethod, parameters, ...definition }) => ({
     ...definition,
-    parameters,
-    execute: async (_toolCallId, params) => jsonResult(rpcMethod, params),
+    description: `${definition.description}${protocolDescription(rpcMethod)}`,
+    parameters: withProtocolParameters(rpcMethod, parameters),
+    execute: async (_toolCallId, params) =>
+      jsonResult(rpcMethod, { ...params, responseVersion: 2 }),
   });
 
   const noParamsTool = ({ rpcMethod, ...definition }) => ({
     ...definition,
-    parameters: {
-      type: "object",
-      properties: {},
-      additionalProperties: false,
-    },
-    execute: async () => jsonResult(rpcMethod),
+    description: `${definition.description}${protocolDescription(rpcMethod)}`,
+    parameters: withProtocolParameters(rpcMethod),
+    execute: async (_toolCallId, params = {}) =>
+      jsonResult(rpcMethod, { ...params, responseVersion: 2 }),
   });
 
   const tools = [
@@ -237,7 +311,7 @@ export default function (pi) {
       name: "vscode_get_editor_state",
       label: "VS Code Editor State",
       description:
-        "Get the active editor, current selection, cached latest selection, workspace folders, and open editors from VS Code.",
+        "Get VS Code editor state. Defaults to compact; use minimal for the active cursor only or full for selection text, tabs, visible editors, and open documents.",
       promptSnippet: "Read current VS Code editor state, selection, and open editors.",
       promptGuidelines: [
         "Use VS Code bridge tools when the user asks about their current editor state, selection, diagnostics, symbols, definitions, hovers, references, or editor actions.",
@@ -266,14 +340,28 @@ export default function (pi) {
       name: "vscode_get_diagnostics",
       label: "VS Code Diagnostics",
       description:
-        "Get VS Code diagnostics (LSP, lint, or type errors) for a file or the full workspace.",
+        "Get filtered VS Code diagnostics for the active editor, open documents, workspace, or explicit URIs.",
       promptSnippet: "Read current VS Code diagnostics for a file or the workspace.",
       parameters: {
         type: "object",
         properties: {
-          filePath: {
+          scope: {
             type: "string",
-            description: "Optional absolute or workspace-relative file path",
+            enum: ["active", "open", "workspace", "uris"],
+            description: "Diagnostic scope; defaults to active",
+          },
+          uris: {
+            type: "array",
+            items: { type: "string" },
+            description: "File paths or URIs; required when scope=uris",
+          },
+          severity: {
+            type: "array",
+            items: {
+              type: "string",
+              enum: ["error", "warning", "information", "hint"],
+            },
+            description: "Severity filter; defaults to error and warning",
           },
         },
         additionalProperties: false,
@@ -754,8 +842,25 @@ export default function (pi) {
       parameters: {
         type: "object",
         properties: {
-          since: { type: "number", description: "Only return notifications after this timestamp" },
           limit: { type: "number", description: "Maximum number of notifications to return" },
+          afterCursor: {
+            type: "string",
+            description: "Sequence cursor returned by the previous notification read",
+          },
+          start: {
+            type: "string",
+            enum: ["buffer", "now"],
+            description: "Initial position; defaults to buffer",
+          },
+          types: {
+            type: "array",
+            items: { type: "string" },
+            description: "Optional event type filter",
+          },
+          coalesce: {
+            type: "boolean",
+            description: "Coalesce compatible adjacent events; defaults to true",
+          },
         },
         additionalProperties: false,
       },
@@ -786,6 +891,34 @@ export default function (pi) {
         additionalProperties: false,
       },
       rpcMethod: "showNotification",
+    }),
+    tool({
+      name: "vscode_bridge_help",
+      label: "VS Code Bridge Protocol Help",
+      description:
+        "Describe bridge v2 tools, detail levels, pagination, defaults, paths, costs, compatibility, or notifications.",
+      parameters: {
+        type: "object",
+        properties: {
+          tool: { type: "string", description: "Exact bridge tool or RPC method name" },
+          topic: {
+            type: "string",
+            enum: [
+              "overview",
+              "parameters",
+              "detail",
+              "pagination",
+              "paths",
+              "cost",
+              "compatibility",
+              "notifications",
+            ],
+          },
+          level: detailProperty,
+        },
+        additionalProperties: false,
+      },
+      rpcMethod: "bridgeHelp",
     }),
   ];
 

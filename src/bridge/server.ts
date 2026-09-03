@@ -127,6 +127,7 @@ export async function createBridge(
     token,
     url: `http://127.0.0.1:${address.port}`,
     dispose: async () => {
+      state.snapshotStore.clear();
       await new Promise<void>((resolve, reject) => {
         server.close((error) => {
           if (error) reject(error);

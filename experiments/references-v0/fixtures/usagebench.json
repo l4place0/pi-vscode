@@ -1,0 +1,97 @@
+{
+  "source": {
+    "name": "UsageBench",
+    "repository": "https://github.com/BrokkAi/usagebench",
+    "revision": "87b72a5b5291c24e259db9b1e70b27f246f13ef4",
+    "license": "MIT",
+    "licenseFile": "experiments/references-v0/THIRD_PARTY_NOTICES.md",
+    "positionEncoding": "utf-16",
+    "transformation": "Selected declaration and expectedUsages fields were converted from YAML to JSON. Stable bridge paths and optional full-detail ranges are derived by replay.mjs; source ranges are unchanged."
+  },
+  "cases": [
+    {
+      "id": "js-parity-object-literal-method-call",
+      "sourceFile": "benchmarks/cases/javascript-lsp-parity.yaml",
+      "coverage": "single-file and cross-file method references",
+      "declaration": {
+        "uri": "benchmark://source/src/library.js",
+        "range": {
+          "start": { "line": 15, "character": 2 },
+          "end": { "line": 15, "character": 12 }
+        }
+      },
+      "expectedUsages": [
+        {
+          "uri": "benchmark://source/src/library.js",
+          "range": {
+            "start": { "line": 10, "character": 19 },
+            "end": { "line": 10, "character": 29 }
+          }
+        },
+        {
+          "uri": "benchmark://source/src/consumer.js",
+          "range": {
+            "start": { "line": 4, "character": 8 },
+            "end": { "line": 4, "character": 18 }
+          }
+        }
+      ]
+    },
+    {
+      "id": "ts-named-export-import-function",
+      "sourceFile": "benchmarks/cases/typescript-baseline.yaml",
+      "coverage": "cross-file named export and import",
+      "declaration": {
+        "uri": "benchmark://source/src/components.tsx",
+        "range": {
+          "start": { "line": 6, "character": 16 },
+          "end": { "line": 6, "character": 26 }
+        }
+      },
+      "expectedUsages": [
+        {
+          "uri": "benchmark://source/src/components.tsx",
+          "range": {
+            "start": { "line": 18, "character": 29 },
+            "end": { "line": 18, "character": 39 }
+          }
+        },
+        {
+          "uri": "benchmark://source/src/app.tsx",
+          "range": {
+            "start": { "line": 6, "character": 14 },
+            "end": { "line": 6, "character": 24 }
+          }
+        }
+      ]
+    },
+    {
+      "id": "ts-default-class-import-and-construction",
+      "sourceFile": "benchmarks/cases/typescript-baseline.yaml",
+      "coverage": "class and constructor references",
+      "declaration": {
+        "uri": "benchmark://source/src/components.tsx",
+        "range": {
+          "start": { "line": 10, "character": 21 },
+          "end": { "line": 10, "character": 28 }
+        }
+      },
+      "expectedUsages": [
+        {
+          "uri": "benchmark://source/src/components.tsx",
+          "range": {
+            "start": { "line": 23, "character": 22 },
+            "end": { "line": 23, "character": 29 }
+          }
+        },
+        {
+          "uri": "benchmark://source/src/app.tsx",
+          "range": {
+            "start": { "line": 4, "character": 20 },
+            "end": { "line": 4, "character": 27 }
+          }
+        }
+      ]
+    }
+  ]
+}

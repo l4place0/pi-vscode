@@ -57,7 +57,7 @@ async function createPiFixture(directory, logPath) {
   const scriptPath = join(directory, "pi-fixture.cjs");
   await writeFile(
     scriptPath,
-    `require("node:fs").appendFileSync(${JSON.stringify(logPath)}, JSON.stringify({ args: process.argv.slice(2), cwd: process.cwd() }) + "\\n"); setTimeout(() => {}, 30000);\n`,
+    `require("node:fs").appendFileSync(${JSON.stringify(logPath)}, JSON.stringify({ args: process.argv.slice(2), cwd: process.cwd(), bridgeUrl: process.env.PI_VSCODE_BRIDGE_URL, bridgeToken: process.env.PI_VSCODE_BRIDGE_TOKEN }) + "\\n"); setTimeout(() => {}, 30000);\n`,
     "utf8",
   );
   if (process.platform === "win32") {

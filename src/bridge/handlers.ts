@@ -1,4 +1,6 @@
 import * as vscode from "vscode";
+import { handleRpcV2 } from "./handlers-v2.ts";
+import { createErrorEnvelope, isV2Request } from "./protocol.ts";
 import {
   captureSelection,
   captureSelectionStatus,
@@ -28,6 +30,21 @@ import {
 } from "./utils.ts";
 
 export async function handleRpc(
+  method: string,
+  params: Record<string, unknown>,
+  state: BridgeState,
+): Promise<unknown> {
+  if (isV2Request(params)) {
+    try {
+      return await handleRpcV2(method, params, state, () => handleLegacyRpc(method, params, state));
+    } catch (error) {
+      return createErrorEnvelope(error);
+    }
+  }
+  return handleLegacyRpc(method, params, state);
+}
+
+export async function handleLegacyRpc(
   method: string,
   params: Record<string, unknown>,
   state: BridgeState,
@@ -413,7 +430,10 @@ async function applyWorkspaceEdit(params: Record<string, unknown>) {
   }
   return {
     applied: await vscode.workspace.applyEdit(workspaceEdit),
-    edits: edits.map((edit) => ({ filePath: getFileUri(edit.filePath).fsPath, range: edit.range })),
+    edits: edits.map((edit) => ({
+      filePath: getFileUri(edit.filePath).fsPath,
+      range: edit.range,
+    })),
   };
 }
 
@@ -515,7 +535,10 @@ async function applyFormattingEdits(
     fileUri: uri.toString(),
     range: range ? serializeRange(range) : undefined,
     editCount: edits.length,
-    edits: edits.map((edit) => ({ range: serializeRange(edit.range), newText: edit.newText })),
+    edits: edits.map((edit) => ({
+      range: serializeRange(edit.range),
+      newText: edit.newText,
+    })),
     applied: edits.length > 0 ? await vscode.workspace.applyEdit(workspaceEdit) : true,
   };
 }
