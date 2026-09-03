@@ -49,6 +49,9 @@ pnpm acceptance
 
 自动化覆盖结构、协议和进程生命周期，但下列交互或视觉结果仍需人工判断：
 
+Windows 当前执行步骤、预期结果、取证和隔离方式见
+[`manual-acceptance-windows.md`](manual-acceptance-windows.md)。
+
 1. F5 打开的 Extension Development Host 中 fork 图标、状态栏和 Packages view 正常显示。
 2. 使用真实 Pi 打开 TUI，输入、输出、窗口 resize、退出和再次打开行为正常。
 3. multi-root workspace 的 Explorer 菜单入口可见且可触发；active editor、Explorer 文件和目录的
@@ -56,10 +59,10 @@ pnpm acceptance
 4. terminal session 在窗口重载后恢复原 cwd 和 session file。
 5. `@pi-fork` 产生真实 text delta；confirm、select、input 和取消使用 VS Code 原生 UI。
 6. Packages 在隔离的 Pi 配置目录中完成 list/install/remove，并检查失败和取消提示。
-7. 官方扩展与 fork 同时安装时，commands、chat participant、sidebar、settings 和 session
-   storage 不冲突。
-8. Windows、macOS、Linux 至少各完成一次真实 Pi TUI smoke；无法取得的平台应作为已知缺口
-   记录，不能默认为通过。
+7. 官方扩展与 fork 同时安装的 A/B 验收已延期，不阻塞本轮 Windows 收口；后续执行时仍需检查
+   commands、chat participant、sidebar、settings 和 session storage 不冲突。
+8. macOS/Linux 手工 F5 与真实 Pi TUI smoke 已延期，不阻塞本轮 Windows 收口；三平台 CI
+   build、单测和 Pi smoke 仍是阻断门禁。
 
 ## 发布候选记录
 
