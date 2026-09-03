@@ -1,8 +1,14 @@
+import { spawnSync } from "node:child_process";
 import { mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
-import { createPiInvocation, execPi, resolveExecutablePath } from "../src/pi-process.ts";
+import {
+  createPiInvocation,
+  createPiTerminalLaunch,
+  execPi,
+  resolveExecutablePath,
+} from "../src/pi-process.ts";
 
 const temporaryDirectories: string[] = [];
 
@@ -108,6 +114,53 @@ describe.runIf(process.platform === "win32")("Windows Pi process integration", (
     });
 
     expect(JSON.parse(result.stdout)).toEqual({ args, cwd: directory, marker: "passed" });
+  });
+
+  it("launches cmd shims through terminal-compatible argument serialization", async () => {
+    const directory = await mkdtemp(join(tmpdir(), "pi terminal "));
+    temporaryDirectories.push(directory);
+    const scriptPath = join(directory, "echo-args.cjs");
+    const commandPath = join(directory, "pi.cmd");
+    await writeFile(
+      scriptPath,
+      "process.stdout.write(JSON.stringify({ args: process.argv.slice(2), cwd: process.cwd() }));\n",
+      "utf8",
+    );
+    await writeFile(
+      commandPath,
+      `@echo off\r\n"${process.execPath}" "%~dp0echo-args.cjs" %*\r\n`,
+      "utf8",
+    );
+    const args = [
+      "plain",
+      "with spaces",
+      'a"b',
+      "A&B",
+      "x|y",
+      "a<b",
+      "c>d",
+      "caret^",
+      "%PATH%",
+      "bang!",
+      "line one\nline two",
+      "`$env:PATH`",
+    ];
+    const launch = createPiTerminalLaunch(commandPath, args);
+
+    expect(launch.shellPath.toLowerCase()).toContain("powershell");
+    const result = spawnSync(launch.shellPath, launch.shellArgs, {
+      cwd: directory,
+      env: process.env,
+      encoding: "utf8",
+      timeout: 10_000,
+    });
+
+    expect(result.error).toBeUndefined();
+    expect(result.status, result.stderr).toBe(0);
+    expect(JSON.parse(result.stdout)).toEqual({
+      args: args.map((argument) => argument.replace(/\r\n|[\r\n]/g, " ")),
+      cwd: directory,
+    });
   });
 });
 

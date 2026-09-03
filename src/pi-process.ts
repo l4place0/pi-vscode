@@ -126,8 +126,49 @@ export function createPiTerminalLaunch(
   args: readonly string[],
   options: Pick<PiProcessOptions, "platform" | "comSpec" | "powershellPath"> = {},
 ): { shellPath: string; shellArgs: string[] } {
+  const platform = options.platform ?? process.platform;
+  if (platform === "win32" && [".cmd", ".bat"].includes(extname(piPath).toLowerCase())) {
+    // TerminalOptions cannot request windowsVerbatimArguments. Use an encoded PowerShell
+    // bootstrap to hand the already-escaped raw command line to ProcessStartInfo instead.
+    // cmd treats literal newlines as command boundaries, so flatten multiline prompt text.
+    const terminalArgs = args.map((argument) => argument.replace(/\r\n|[\r\n]/g, " "));
+    const commandLine = [escapeCmdCommand(piPath), ...terminalArgs.map(escapeCmdArgument)].join(
+      " ",
+    );
+    const command = options.comSpec ?? process.env.ComSpec ?? "cmd.exe";
+    const encodedCommand = createPowerShellTerminalCommand(command, [
+      "/d",
+      "/s",
+      "/v:off",
+      "/c",
+      `"${commandLine}"`,
+    ]);
+    return {
+      shellPath: options.powershellPath ?? "powershell.exe",
+      shellArgs: ["-NoLogo", "-NoProfile", "-NonInteractive", "-EncodedCommand", encodedCommand],
+    };
+  }
+
   const invocation = createPiInvocation(piPath, args, options);
   return { shellPath: invocation.command, shellArgs: invocation.args };
+}
+
+function createPowerShellTerminalCommand(command: string, args: readonly string[]): string {
+  const payload = Buffer.from(
+    JSON.stringify({ command, arguments: args.join(" ") }),
+    "utf8",
+  ).toString("base64");
+  const script = [
+    `$payload = [Text.Encoding]::UTF8.GetString([Convert]::FromBase64String('${payload}')) | ConvertFrom-Json`,
+    "$startInfo = New-Object System.Diagnostics.ProcessStartInfo",
+    "$startInfo.FileName = [string]$payload.command",
+    "$startInfo.Arguments = [string]$payload.arguments",
+    "$startInfo.UseShellExecute = $false",
+    "$process = [Diagnostics.Process]::Start($startInfo)",
+    "$process.WaitForExit()",
+    "exit $process.ExitCode",
+  ].join("; ");
+  return Buffer.from(script, "utf16le").toString("base64");
 }
 
 function escapeCmdCommand(command: string): string {
