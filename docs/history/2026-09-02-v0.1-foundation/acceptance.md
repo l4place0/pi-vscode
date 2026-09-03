@@ -118,6 +118,8 @@ fixture 检查终端不会立即退出。完整自动门禁使用 `pnpm acceptan
 
 Windows、macOS、Linux 各执行一次：
 
+Windows 的详细、可逐项记录 SOP 见 `docs/manual-acceptance-windows.md`。
+
 1. `pnpm install && pnpm test && pnpm build`。
 2. F5 打开 Extension Development Host。
 3. 状态栏出现 fork 标识。
@@ -130,6 +132,10 @@ Windows、macOS、Linux 各执行一次：
 10. Packages list/install/remove 在隔离的 Pi 配置目录中验证。
 11. 官方插件与 fork 同时安装时，命令、设置、sidebar 和 session state 不冲突。
 12. 本地 VSIX 在干净 profile 中安装、激活、卸载成功。
+
+本轮范围调整：官方扩展与 fork 的 A/B 验收、macOS/Linux 手工 F5 与真实 TUI smoke 延期，
+不阻塞当前 Windows 收口；三平台 CI 仍必须通过。档案在剩余 Windows 手工项目完成前保持
+`in-progress`。
 
 ## 7. Release candidate 门禁
 

@@ -7,7 +7,7 @@
 
 ## 实际修改
 
-- 标准 `pnpm test` 已包含 lint、typecheck 和 Vitest；当前共有 6 个测试文件、54 个单元/Windows integration 用例。
+- 标准 `pnpm test` 已包含 lint、typecheck 和 Vitest；当前共有 9 个测试文件、62 个单元/Windows integration 用例，并用契约测试锁定标准测试入口、F5 task、Webview CSP 和关键 extension wiring。
 - Pi 安装 namespace 已迁移到 `@earendil-works/pi-coding-agent`；npm 安装使用 `--ignore-scripts`。
 - 新增统一 workspace/cwd resolution，按 Explorer resource、active editor、首个 workspace 的顺序解析；session state 升级为保存 cwd 的 v1 结构并兼容旧 map。
 - Explorer 文件和目录上下文已使用传入的 `resourceUri`；未打开文件不再伪造 selection。
@@ -28,6 +28,8 @@
   激活、Open command、终端存活、卸载确认和清理；`pnpm acceptance` 串联完整自动门禁，
   长期自动/CI/手工流程固化在 `docs/acceptance.md`。
 - `.vscode-test` 与 `.tmp` 已从 Git、Oxlint 和 Oxfmt 检查中排除，避免本地验收缓存污染标准检查。
+- terminal session report 现在等待 `workspaceState` 真正持久化后才向 Pi bridge 返回成功，降低紧接着 reload/退出时丢失恢复状态的竞态。
+- 新增 Windows 手工验收 SOP 和 Pi RPC UI fixture，使 select/confirm/input 可在隔离配置中无模型调用复现。
 
 ## 提交记录
 
@@ -67,12 +69,16 @@
 - `c8c53d8` `docs: record multi-root integration coverage`：把新增 multi-root 自动验收和剩余视觉检查写入档案。
 - `2052011` `test: tolerate slow Windows process startup`：放宽 Windows terminal fixture 的子进程硬超时。
 - `e054724` `test: extend Windows integration timeout`：为真实 Windows terminal 集成用例设置独立的 Vitest 30 秒预算。
+- `9967945` `test: lock development workflow contracts`：锁定标准测试入口、跨平台 F5 task 和 Packages nonce CSP。
+- `90b2bcc` `test: lock extension wiring contracts`：锁定 Chat UI、session restore 和 Packages 消息的装配接线。
+- `db60531` `fix: await terminal session persistence`：让 bridge session report 等待 workspace state 落盘，并增加异步确认测试。
+- `a4ec56f` `test: add reproducible Windows acceptance SOP`：持久化隔离 Windows SOP 和无模型 RPC UI fixture。
 
 ## 验证结果
 
 - `pnpm fmt`：通过，0 warnings / 0 errors。
 - `pnpm typecheck`：通过。
-- `pnpm test:unit`：通过，6 files / 55 tests；Windows 真实 `.cmd` fixture 覆盖 cwd/env、空格、引号、换行及 `& | < > ^ % !`，并按 VS Code Terminal 的普通参数序列化方式执行 launcher。
+- `pnpm test:unit`：通过，9 files / 62 tests；Windows 真实 `.cmd` fixture 覆盖 cwd/env、空格、引号、换行及 `& | < > ^ % !`，并按 VS Code Terminal 的普通参数序列化方式执行 launcher。
 - `pnpm build`：通过，生成 `dist/extension.cjs`。
 - `pnpm test:pi 0.84.4`：通过；版本、关键 flags、offline RPC `get_state`、bundled bridge `getStatus` 和无 `extension_error` 均通过。
 - `pnpm test:pi latest`：通过；2026-09-02 registry latest 仍解析为 0.84.4。
@@ -84,6 +90,7 @@
 - `pnpm test:vsix -- .\pi-vscode-fork-0.1.0.vsix`：本机 VS Code 1.136.0 通过；隔离 profile 中安装、激活、Pi fixture terminal 2 秒存活、卸载和临时目录清理均成功。
 - `pnpm acceptance`：使用本机 VS Code 1.136.0 完整通过；串联 lint、format check、typecheck、55 个单测、build、Pi 0.84.4 smoke、Extension Host、VSIX package/content verification 和隔离 VSIX smoke。
 - 扩展后的 `pnpm test:integration`：本机 VS Code 1.136.0 通过；临时 multi-root workspace 中，从 workspace B active editor、workspace A Explorer 文件和 workspace B Explorer 目录启动的三个真实 Pi fixture 进程均收到正确 cwd 与上下文，首个终端在 2 秒观察窗内保持运行。
+- RPC UI fixture：本机 Pi 0.84.4 offline RPC 实测 `/vscode-select` 产生 `extension_ui_request`，发送选择 response 后 prompt 成功完成；同一 fixture 在手工 SOP 中覆盖 select/confirm/input。
 - GitHub CI：[run 33725575346](https://github.com/l4place0/pi-vscode/actions/runs/33725575346) 全部通过；Windows/macOS/Linux checks 均完成 lint、typecheck、55 个测试、build 和 Pi 0.84.4 smoke，Pi latest、Ubuntu multi-root Extension Host、隔离 VSIX smoke、VSIX 内容验证与 artifact 均通过。
 - Windows 真实 Pi 手工 smoke：用户确认修复后的日常 profile 可以正常启动 Pi TUI，原“一闪即关”回归关闭。
 - 本机工具事实：Node 24.20.0、pnpm 10.32.1、VS Code 1.136.0；CI 固定 Node 22、pnpm 10.32.1、VS Code 1.110。
@@ -100,13 +107,14 @@
 - fork 的 push 事件在本次验收中没有自动创建 workflow run；增加 `workflow_dispatch` 后使用当前 `gh` 身份手动触发。CI 配置本身和所有 job 已验证，push 自动触发仍需后续观察 GitHub fork 行为。
 - Windows runner 将 `tmpdir()` 返回为 8.3 短路径，但子进程 cwd 报告规范长路径；测试改为比较 `realpath`，产品 cwd 不受影响。
 - Windows 托管 runner 的真实 PowerShell → cmd → Node terminal fixture 偶尔超过 Vitest 默认 5 秒预算；子进程及用例均显式设置 30 秒上限，仍要求进程正常退出、状态为 0 且参数/cwd 完整匹配，不使用 retry 或跳过。
+- VS Code extension-test 使用内存型 workspace storage，两个独立测试进程无法忠实模拟窗口 Reload 后的持久化读取；未保留无效的双进程测试。改为让 bridge ack 等待存储完成并用单测覆盖，真实 Reload 仍按 Windows SOP 手工观察。
 - 没有实现 `.pi/APPEND_SYSTEM.md` discovery，没有删除 Packages sidebar，也没有增加 Marketplace/Open VSX 发布。
 
 ## 遗留问题
 
-- macOS/Linux F5 与手工功能验收尚未执行。
-- Windows 真实 Pi TUI 启动已手工通过，multi-root cwd/context 已由 Extension Host 自动通过。F5 UI、Explorer 菜单入口、session restore、真实 `@pi-fork` text delta/native UI、Packages install/remove 和官方扩展 A/B 仍待手工验证。
-- 官方扩展与 fork 同时安装的完整 A/B 手工流程尚未执行；所有已知全局 contribution/storage IDs 已隔离并有 manifest 测试。
+- macOS/Linux F5 与真实 Pi TUI 手工验收按本轮决定延期；三平台自动门禁已通过。
+- Windows 真实 Pi TUI 启动已手工通过，multi-root cwd/context 已由 Extension Host 自动通过。F5 UI、Explorer 菜单入口、session restore、真实 `@pi-fork` text delta/native UI 和 Packages install/remove 仍按 Windows SOP 待手工验证。
+- 官方扩展与 fork 同时安装的完整 A/B 手工流程按本轮决定延期；所有已知全局 contribution/storage IDs 已隔离并有 manifest 测试。
 - Packages registry browser 的 250 次 metadata fan-out 仍保留，后续版本可独立评估产品和性能取舍。
 - GitHub Actions 提示 `pnpm/action-setup@v4` 与 `actions/upload-artifact@v4` 的 Node 20 action runtime 已被 runner 强制切换到 Node 24；当前不影响通过结果，后续应在上游 action 发布兼容版本后升级。
 

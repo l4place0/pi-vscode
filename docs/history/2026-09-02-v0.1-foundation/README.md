@@ -64,5 +64,6 @@
 - [x] 完成本地 VSIX 验收。
 
 远端 Windows/macOS/Linux CI 已通过，multi-root cwd/context 已增加真实 Extension Host 自动
-验收。F5 视觉、Explorer 菜单入口、session restore、真实 Chat/Packages、官方扩展 A/B 以及
-macOS/Linux 真实 TUI 的完整手工矩阵尚未全部执行，因此档案继续保持 `in-progress`。
+验收。Windows F5 视觉、Explorer 菜单入口、session restore 和真实 Chat/Packages 仍按
+`docs/manual-acceptance-windows.md` 执行；官方扩展 A/B 与 macOS/Linux 手工 F5/TUI 已延期。
+因此档案继续保持 `in-progress`。
