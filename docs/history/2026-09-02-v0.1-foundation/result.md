@@ -54,6 +54,7 @@
 - `df4c20f` `fix: launch Windows cmd shims from VS Code terminals`：增加 Terminal 专用 Windows launcher 和真实 `.cmd` 回归测试。
 - `e77b029` `test: exercise Windows Pi terminal lifetime`：在 Windows Extension Host 中实际调用 open command 并检查终端不会立即退出。
 - `e26014a` `test: automate isolated VSIX acceptance`：自动化干净 profile VSIX smoke，接入 CI 并持久化完整验收流程。
+- `48362b6` `fix: pass Pi version through acceptance script`：修正组合 script 中 pnpm 参数透传，确保完整门禁可一次执行。
 
 ## 验证结果
 
@@ -69,6 +70,7 @@
 - 干净 profile：0.1.0 VSIX 安装、`pi0.pi-vscode-fork@0.1.0` 列出和卸载均成功；临时 profile 已移入 Windows 回收站。
 - 日常 profile：修复后的 VSIX 已使用 `--force` 覆盖安装，`code --list-extensions --show-versions` 返回 `pi0.pi-vscode-fork@0.1.0`。
 - `pnpm test:vsix -- .\pi-vscode-fork-0.1.0.vsix`：本机 VS Code 1.136.0 通过；隔离 profile 中安装、激活、Pi fixture terminal 2 秒存活、卸载和临时目录清理均成功。
+- `pnpm acceptance`：使用本机 VS Code 1.136.0 完整通过；串联 lint、format check、typecheck、55 个单测、build、Pi 0.84.4 smoke、Extension Host、VSIX package/content verification 和隔离 VSIX smoke。
 - Windows 真实 Pi 手工 smoke：用户确认修复后的日常 profile 可以正常启动 Pi TUI，原“一闪即关”回归关闭。
 - 本机工具事实：Node 24.20.0、pnpm 10.32.1、VS Code 1.136.0；CI 固定 Node 22、pnpm 10.32.1、VS Code 1.110。
 
