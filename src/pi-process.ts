@@ -1,6 +1,6 @@
 import { spawn, type ChildProcess, type SpawnOptions } from "node:child_process";
 import { accessSync, constants } from "node:fs";
-import { extname, join } from "node:path";
+import { extname, win32 } from "node:path";
 
 export interface PiInvocation {
   command: string;
@@ -34,7 +34,7 @@ export function resolveExecutablePath(
   for (const directory of (options.pathEnv ?? process.env.PATH ?? "").split(";")) {
     if (!directory) continue;
     for (const extension of extensions) {
-      const candidate = join(directory, command + extension);
+      const candidate = win32.join(directory, command + extension);
       try {
         access(candidate, constants.F_OK);
         return candidate;
