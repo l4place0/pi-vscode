@@ -27,6 +27,29 @@ async function run() {
     extension.packageJSON.contributes.views["pi-vscode-fork"][0].id,
     "pi-vscode-fork.packages",
   );
+
+  if (process.platform === "win32" && process.env.PI_TERMINAL_INTEGRATION === "1") {
+    await assertWindowsTerminalStaysOpen();
+  }
+}
+
+async function assertWindowsTerminalStaysOpen() {
+  const existingTerminals = new Set(vscode.window.terminals);
+  await vscode.commands.executeCommand("pi-vscode-fork.open");
+  const terminal = vscode.window.terminals.find(
+    (candidate) => !existingTerminals.has(candidate) && candidate.name === "Pi Fork",
+  );
+  assert.ok(terminal, "Pi Fork terminal is created");
+
+  let closed = false;
+  const closeSubscription = vscode.window.onDidCloseTerminal((candidate) => {
+    if (candidate === terminal) closed = true;
+  });
+  await new Promise((resolve) => setTimeout(resolve, 2_000));
+  closeSubscription.dispose();
+
+  assert.equal(closed, false, "Pi Fork terminal remains open after launch");
+  terminal.dispose();
 }
 
 module.exports = { run };
