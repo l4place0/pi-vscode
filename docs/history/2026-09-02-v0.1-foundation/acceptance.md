@@ -110,6 +110,10 @@ code --install-extension <generated.vsix> --force
 
 在独立 `--user-data-dir` 和 `--extensions-dir` 中验证安装、激活和卸载，避免污染日常 VS Code 环境。
 
+上述隔离流程由 `pnpm test:vsix` 自动执行，并额外调用 `Pi Fork: Open`、使用临时 Pi
+fixture 检查终端不会立即退出。完整自动门禁使用 `pnpm acceptance`；长期流程见
+`docs/acceptance.md`。
+
 ## 6. 手工验收
 
 Windows、macOS、Linux 各执行一次：

@@ -50,6 +50,9 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - run: pnpm build
       - run: xvfb-run -a pnpm test:integration
+      - run: pnpm package
+      - run: node scripts/verify-vsix.mjs
+      - run: xvfb-run -a pnpm test:vsix
 
   package:
     name: VSIX

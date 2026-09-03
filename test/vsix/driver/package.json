@@ -1,0 +1,13 @@
+{
+  "name": "pi-vscode-fork-vsix-test-driver",
+  "displayName": "Pi VSIX Test Driver",
+  "version": "0.0.0",
+  "publisher": "pi0-tests",
+  "main": "./extension.cjs",
+  "activationEvents": [
+    "*"
+  ],
+  "engines": {
+    "vscode": "^1.110.0"
+  }
+}

@@ -132,17 +132,22 @@ pnpm test:pi -- 0.84.4
 pnpm test:integration
 pnpm package
 node scripts/verify-vsix.mjs pi-vscode-fork-0.1.0.vsix
+pnpm test:vsix
 ```
 
 `test:pi` installs Pi into a disposable temporary directory with an isolated npm cache, verifies the
 CLI flags, starts offline RPC, loads the bundled bridge, and checks a loopback bridge call. The
 Extension Host test downloads VS Code 1.110 on first use.
 
-For clean-profile VSIX validation, use dedicated directories rather than the daily VS Code profile:
+`test:vsix` creates disposable user-data, extensions, and Pi fixture directories. It installs the
+packaged VSIX, activates it, opens a Pi terminal, verifies that the terminal stays alive, uninstalls
+the extension, and removes the isolated profile. Set `VSCODE_EXECUTABLE_PATH` to reuse a local VS
+Code executable; otherwise VS Code 1.110 is downloaded.
 
-```powershell
-$profileRoot = Join-Path $PWD ".tmp/vsix-acceptance"
-code --user-data-dir "$profileRoot/user-data" --extensions-dir "$profileRoot/extensions" --install-extension ./pi-vscode-fork-0.1.0.vsix --force
-code --user-data-dir "$profileRoot/user-data" --extensions-dir "$profileRoot/extensions" --list-extensions --show-versions
-code --user-data-dir "$profileRoot/user-data" --extensions-dir "$profileRoot/extensions" --uninstall-extension pi0.pi-vscode-fork
+Run the complete automated release-candidate sequence with:
+
+```bash
+pnpm acceptance
 ```
+
+See [docs/acceptance.md](docs/acceptance.md) for the CI mapping and the remaining manual checks.
