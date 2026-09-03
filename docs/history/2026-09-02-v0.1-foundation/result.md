@@ -63,6 +63,7 @@
 - `3d53e1c` `docs: standardize Pi smoke commands`：同步文档中的跨平台 smoke 命令。
 - `626d096` `test: avoid nested Windows pipe deadlock`：让 terminal fixture 使用接近 PTY 的无管道验证方式。
 - `8002a39` `test: normalize Windows terminal cwd`：兼容 Windows 8.3 短路径与规范长路径。
+- `f58305f` `test: exercise multi-root terminal contexts`：在真实 Extension Host 中验证 active editor、Explorer 文件和目录的实际 Pi cwd/context。
 
 ## 验证结果
 
@@ -79,6 +80,7 @@
 - 日常 profile：修复后的 VSIX 已使用 `--force` 覆盖安装，`code --list-extensions --show-versions` 返回 `pi0.pi-vscode-fork@0.1.0`。
 - `pnpm test:vsix -- .\pi-vscode-fork-0.1.0.vsix`：本机 VS Code 1.136.0 通过；隔离 profile 中安装、激活、Pi fixture terminal 2 秒存活、卸载和临时目录清理均成功。
 - `pnpm acceptance`：使用本机 VS Code 1.136.0 完整通过；串联 lint、format check、typecheck、55 个单测、build、Pi 0.84.4 smoke、Extension Host、VSIX package/content verification 和隔离 VSIX smoke。
+- 扩展后的 `pnpm test:integration`：本机 VS Code 1.136.0 通过；临时 multi-root workspace 中，从 workspace B active editor、workspace A Explorer 文件和 workspace B Explorer 目录启动的三个真实 Pi fixture 进程均收到正确 cwd 与上下文，首个终端在 2 秒观察窗内保持运行。
 - GitHub CI：[run 33712627565](https://github.com/l4place0/pi-vscode/actions/runs/33712627565) 全部通过；Windows/macOS/Linux checks 均完成 lint、typecheck、55 个测试、build 和 Pi 0.84.4 smoke，Pi latest、Ubuntu Extension Host、隔离 VSIX smoke、VSIX 内容验证与 artifact 均通过。
 - Windows 真实 Pi 手工 smoke：用户确认修复后的日常 profile 可以正常启动 Pi TUI，原“一闪即关”回归关闭。
 - 本机工具事实：Node 24.20.0、pnpm 10.32.1、VS Code 1.136.0；CI 固定 Node 22、pnpm 10.32.1、VS Code 1.110。
@@ -99,7 +101,7 @@
 ## 遗留问题
 
 - macOS/Linux F5 与手工功能验收尚未执行。
-- Windows 真实 Pi TUI 启动已手工通过。F5 UI、multi-root Explorer 行为、session restore、真实 `@pi-fork` text delta/native UI、Packages install/remove 和官方扩展 A/B 仍待手工验证。
+- Windows 真实 Pi TUI 启动已手工通过，multi-root cwd/context 已由 Extension Host 自动通过。F5 UI、Explorer 菜单入口、session restore、真实 `@pi-fork` text delta/native UI、Packages install/remove 和官方扩展 A/B 仍待手工验证。
 - 官方扩展与 fork 同时安装的完整 A/B 手工流程尚未执行；所有已知全局 contribution/storage IDs 已隔离并有 manifest 测试。
 - Packages registry browser 的 250 次 metadata fan-out 仍保留，后续版本可独立评估产品和性能取舍。
 - GitHub Actions 提示 `pnpm/action-setup@v4` 与 `actions/upload-artifact@v4` 的 Node 20 action runtime 已被 runner 强制切换到 Node 24；当前不影响通过结果，后续应在上游 action 发布兼容版本后升级。
