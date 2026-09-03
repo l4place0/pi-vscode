@@ -24,6 +24,9 @@
 - fork 的 extension、command、chat、icon、terminal profile、activity/view、setting 和 session storage ID 已统一隔离为 `pi-vscode-fork.*`。
 - CI 已改为 Windows/macOS/Linux 矩阵，并增加 Pi 0.84.4 smoke、Pi latest 报告、Ubuntu Extension Host、VSIX 内容校验和 artifact；没有 publish job。
 - 新增可重复的 Pi smoke、Extension Host 和 VSIX ZIP central-directory 验证脚本。
+- 新增 `pnpm test:vsix`，在 run-owned 隔离 profile 中自动完成 VSIX 安装、版本确认、
+  激活、Open command、终端存活、卸载确认和清理；`pnpm acceptance` 串联完整自动门禁，
+  长期自动/CI/手工流程固化在 `docs/acceptance.md`。
 - `.vscode-test` 与 `.tmp` 已从 Git、Oxlint 和 Oxfmt 检查中排除，避免本地验收缓存污染标准检查。
 
 ## 提交记录
@@ -50,6 +53,7 @@
 - `a546a85` `docs: record Windows terminal launch regression`：记录真实 VSIX 点击闪退、根因和新增验收门禁。
 - `df4c20f` `fix: launch Windows cmd shims from VS Code terminals`：增加 Terminal 专用 Windows launcher 和真实 `.cmd` 回归测试。
 - `e77b029` `test: exercise Windows Pi terminal lifetime`：在 Windows Extension Host 中实际调用 open command 并检查终端不会立即退出。
+- `e26014a` `test: automate isolated VSIX acceptance`：自动化干净 profile VSIX smoke，接入 CI 并持久化完整验收流程。
 
 ## 验证结果
 
@@ -63,7 +67,9 @@
 - `pnpm package`：通过，重新生成 `pi-vscode-fork-0.1.0.vsix`，12 files，约 34.68 KB。
 - `node scripts/verify-vsix.mjs pi-vscode-fork-0.1.0.vsix`：通过，7 类必需 artifact 齐全。
 - 干净 profile：0.1.0 VSIX 安装、`pi0.pi-vscode-fork@0.1.0` 列出和卸载均成功；临时 profile 已移入 Windows 回收站。
-- 日常 profile：修复后的 VSIX 已使用 `--force` 覆盖安装，`code --list-extensions --show-versions` 返回 `pi0.pi-vscode-fork@0.1.0`；仍需用户重载日常窗口后手工点击确认视觉/TUI 行为。
+- 日常 profile：修复后的 VSIX 已使用 `--force` 覆盖安装，`code --list-extensions --show-versions` 返回 `pi0.pi-vscode-fork@0.1.0`。
+- `pnpm test:vsix -- .\pi-vscode-fork-0.1.0.vsix`：本机 VS Code 1.136.0 通过；隔离 profile 中安装、激活、Pi fixture terminal 2 秒存活、卸载和临时目录清理均成功。
+- Windows 真实 Pi 手工 smoke：用户确认修复后的日常 profile 可以正常启动 Pi TUI，原“一闪即关”回归关闭。
 - 本机工具事实：Node 24.20.0、pnpm 10.32.1、VS Code 1.136.0；CI 固定 Node 22、pnpm 10.32.1、VS Code 1.110。
 
 ## 与原计划的差异
@@ -81,7 +87,7 @@
 
 - 需要把当前提交推送到远端后观察 Windows/macOS/Linux CI、固定 VS Code 1.110 Extension Host job 和 VSIX artifact job；本任务未执行 push。
 - macOS/Linux F5 与手工功能验收尚未执行。
-- Windows 日常 profile 尚待用户重载窗口后手工点击确认 Pi TUI；Extension Host 已实际执行相同 open command 并证明终端不会立即退出。F5 UI、multi-root Explorer 行为、真实 `@pi-fork` text delta 和 Packages install/remove 仍待手工验证。
+- Windows 真实 Pi TUI 启动已手工通过。F5 UI、multi-root Explorer 行为、session restore、真实 `@pi-fork` text delta/native UI、Packages install/remove 和官方扩展 A/B 仍待手工验证。
 - 官方扩展与 fork 同时安装的完整 A/B 手工流程尚未执行；所有已知全局 contribution/storage IDs 已隔离并有 manifest 测试。
 - Packages registry browser 的 250 次 metadata fan-out 仍保留，后续版本可独立评估产品和性能取舍。
 
