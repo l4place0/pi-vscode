@@ -6,7 +6,7 @@ const MAX_CODE_ACTIONS = 100;
 
 export function createBridgeState(
   initialSelection: BridgeState["latestSelection"],
-  onTerminalSession?: (terminalId: string, sessionFile: string) => void,
+  onTerminalSession?: (terminalId: string, sessionFile: string) => PromiseLike<void> | void,
 ): BridgeState {
   return {
     latestSelection: initialSelection,
@@ -28,8 +28,8 @@ export function createBridgeState(
       }
       return id;
     },
-    reportTerminalSession(terminalId, sessionFile) {
-      onTerminalSession?.(terminalId, sessionFile);
+    async reportTerminalSession(terminalId, sessionFile) {
+      await onTerminalSession?.(terminalId, sessionFile);
     },
   };
 }

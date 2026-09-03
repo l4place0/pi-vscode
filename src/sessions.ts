@@ -7,7 +7,7 @@ import { createNewTerminal } from "./terminal.ts";
 const SESSIONS_KEY = "pi-vscode-fork.terminalSessions";
 
 export interface SessionTracker {
-  update(terminalId: string, sessionFile: string): void;
+  update(terminalId: string, sessionFile: string): Promise<void>;
   track(terminal: vscode.Terminal, terminalId: string, cwd?: string): void;
   onClose(terminal: vscode.Terminal): void;
   restore(extensionUri: vscode.Uri, bridgeConfig: { url: string; token: string }): Promise<void>;
@@ -22,7 +22,7 @@ export function createSessionTracker(context: vscode.ExtensionContext): SessionT
     context.workspaceState.update(SESSIONS_KEY, { version: 1, sessions });
 
   return {
-    update(terminalId, sessionFile) {
+    async update(terminalId, sessionFile) {
       const sessions = read();
       const next = { sessionFile, cwd: terminalCwds.get(terminalId) };
       if (
@@ -31,7 +31,7 @@ export function createSessionTracker(context: vscode.ExtensionContext): SessionT
       )
         return;
       sessions[terminalId] = next;
-      void write(sessions);
+      await write(sessions);
     },
     track(terminal, terminalId, cwd) {
       terminalIds.set(terminal, terminalId);

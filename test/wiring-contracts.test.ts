@@ -15,7 +15,11 @@ describe("extension wiring contracts", () => {
 
   it("restores saved terminal sessions during activation", async () => {
     const source = await readSource("../src/extension.ts");
+    const sessions = await readSource("../src/sessions.ts");
+    const handlers = await readSource("../src/bridge/handlers.ts");
     expect(source).toContain("if (bridgeConfig) void sessions.restore(extensionUri, bridgeConfig)");
+    expect(sessions).toContain("await write(sessions)");
+    expect(handlers).toContain("await state.reportTerminalSession(terminalId, sessionFile)");
   });
 
   it("routes validated Packages messages to process actions", async () => {

@@ -100,10 +100,10 @@ export async function handleRpc(
   }
 }
 
-function reportTerminalSession(params: Record<string, unknown>, state: BridgeState) {
+async function reportTerminalSession(params: Record<string, unknown>, state: BridgeState) {
   const terminalId = readRequiredString(params.terminalId, "terminalId");
   const sessionFile = readRequiredString(params.sessionFile, "sessionFile");
-  state.reportTerminalSession(terminalId, sessionFile);
+  await state.reportTerminalSession(terminalId, sessionFile);
   return { received: true };
 }
 

@@ -18,8 +18,8 @@ export async function activate(context: vscode.ExtensionContext) {
   extensionUri = context.extensionUri;
 
   const sessions = createSessionTracker(context);
-  const bridge = await createBridge(context, (terminalId, sessionFile) => {
-    sessions.update(terminalId, sessionFile);
+  const bridge = await createBridge(context, async (terminalId, sessionFile) => {
+    await sessions.update(terminalId, sessionFile);
   });
   bridgeConfig = { url: bridge.url, token: bridge.token };
   bridgeDispose = () => bridge.dispose();

@@ -11,7 +11,7 @@ const MAX_REQUEST_BYTES = 4 * 1024 * 1024;
 
 export async function createBridge(
   context: vscode.ExtensionContext,
-  onTerminalSession?: (terminalId: string, sessionFile: string) => void,
+  onTerminalSession?: (terminalId: string, sessionFile: string) => PromiseLike<void> | void,
 ): Promise<BridgeContext> {
   const state = createBridgeState(
     captureSelection(vscode.window.activeTextEditor),
