@@ -83,15 +83,15 @@
 - `pnpm test:pi 0.84.4`：通过；版本、关键 flags、offline RPC `get_state`、bundled bridge `getStatus` 和无 `extension_error` 均通过。
 - `pnpm test:pi latest`：通过；2026-09-02 registry latest 仍解析为 0.84.4。
 - Extension Host：本机 VS Code 1.136.0 通过，扩展激活以及 fork commands/profile/view 注册成功；Windows 专项实际执行 `pi-vscode-fork.open`，终端在 2 秒观察窗内保持运行，之后由测试主动关闭，Extension Host 退出码 0。固定 VS Code 1.110 下载再次长时间无进展后中止；Ubuntu CI 仍固定该版本。
-- `pnpm package`：通过，重新生成 `pi-vscode-fork-0.1.0.vsix`，12 files，约 34.84 KB。
+- `pnpm package`：通过，重新生成 `pi-vscode-fork-0.1.0.vsix`，12 files，约 34.86 KB。
 - `node scripts/verify-vsix.mjs pi-vscode-fork-0.1.0.vsix`：通过，7 类必需 artifact 齐全。
 - 干净 profile：0.1.0 VSIX 安装、`pi0.pi-vscode-fork@0.1.0` 列出和卸载均成功；临时 profile 已移入 Windows 回收站。
 - 日常 profile：修复后的 VSIX 已使用 `--force` 覆盖安装，`code --list-extensions --show-versions` 返回 `pi0.pi-vscode-fork@0.1.0`。
 - `pnpm test:vsix -- .\pi-vscode-fork-0.1.0.vsix`：本机 VS Code 1.136.0 通过；隔离 profile 中安装、激活、Pi fixture terminal 2 秒存活、卸载和临时目录清理均成功。
-- `pnpm acceptance`：使用本机 VS Code 1.136.0 完整通过；串联 lint、format check、typecheck、55 个单测、build、Pi 0.84.4 smoke、Extension Host、VSIX package/content verification 和隔离 VSIX smoke。
+- `pnpm acceptance`：使用本机 VS Code 1.136.0 完整通过；串联 lint、format check、typecheck、62 个测试、build、Pi 0.84.4 smoke、Extension Host、VSIX package/content verification 和隔离 VSIX smoke。
 - 扩展后的 `pnpm test:integration`：本机 VS Code 1.136.0 通过；临时 multi-root workspace 中，从 workspace B active editor、workspace A Explorer 文件和 workspace B Explorer 目录启动的三个真实 Pi fixture 进程均收到正确 cwd 与上下文，首个终端在 2 秒观察窗内保持运行。
 - RPC UI fixture：本机 Pi 0.84.4 offline RPC 实测 `/vscode-select` 产生 `extension_ui_request`，发送选择 response 后 prompt 成功完成；同一 fixture 在手工 SOP 中覆盖 select/confirm/input。
-- GitHub CI：[run 33725575346](https://github.com/l4place0/pi-vscode/actions/runs/33725575346) 全部通过；Windows/macOS/Linux checks 均完成 lint、typecheck、55 个测试、build 和 Pi 0.84.4 smoke，Pi latest、Ubuntu multi-root Extension Host、隔离 VSIX smoke、VSIX 内容验证与 artifact 均通过。
+- GitHub CI：[run 33729495189](https://github.com/l4place0/pi-vscode/actions/runs/33729495189) 全部通过；Windows/macOS/Linux checks 均完成 lint、typecheck、62 个测试、build 和 Pi 0.84.4 smoke，Pi latest、Ubuntu multi-root Extension Host、隔离 VSIX smoke、VSIX 内容验证与 artifact 均通过。Windows Pi smoke 本轮约 9 分钟才结束，明显慢于上一轮约 2 分钟，但最终成功，判断为 npm 安装/网络波动。
 - Windows 真实 Pi 手工 smoke：用户确认修复后的日常 profile 可以正常启动 Pi TUI，原“一闪即关”回归关闭。
 - 本机工具事实：Node 24.20.0、pnpm 10.32.1、VS Code 1.136.0；CI 固定 Node 22、pnpm 10.32.1、VS Code 1.110。
 
